@@ -3,9 +3,21 @@
 InkSpace is a modern, maintainable full-stack web application for reading, writing, and discovering stories. It features a modular architecture with a PostgreSQL database, RESTful API using Express, and a bundled SPA frontend.
 
 ## Key Features
-- **Reader Accounts:** Dedicated reader authentication system with bookmarks, reading history tracking, author following, and 1-5 star ratings. Readers can comment on stories and manage their personal reading library.
-- **Reader Experience:** Browse trending stories, customize reading themes and font sizes, bookmark chapters, follow authors, and download works as PDFs.
-- **Author Portal:** Secure JWT-based authentication allows authors to publish works using a rich Quill editor, manage drafts, and track reading statistics.
+- **Reader Accounts:** Dedicated reader authentication system with bookmarks, reading history tracking, author following, and 1-5 star ratings. Readers can write detailed reviews, post comments on stories, and manage their personal reading library.
+- **Reviews & Comments System:**
+  - Readers can write comprehensive reviews with title, rating (1-5 stars), and detailed text (50-2000 characters)
+  - One review per reader per book with edit/delete capabilities
+  - "Helpful" voting system to highlight useful reviews (one vote per reader per review)
+  - Comment system for quick feedback on books
+  - **Two-way threaded reply system**: Authors and readers can reply to reviews and comments, enabling conversation
+  - Authors can respond from their dashboard or the Book Reviews analytics page
+- **Reader Experience:** Browse trending stories, customize reading themes and font sizes, bookmark chapters, follow authors, write reviews and comments with threaded discussions, and download works as PDFs.
+- **Author Portal:** Secure JWT-based authentication allows authors to publish works using a rich Quill editor, manage drafts, track reading statistics, view review analytics, and engage with readers through replies.
+- **Author Analytics:**
+  - Comprehensive review statistics dashboard (total reviews, average rating, rating breakdown)
+  - Book Reviews page with filtering (by star rating) and sorting (newest, oldest, highest/lowest rating, most helpful)
+  - Recent comments section in dashboard with reply functionality
+  - Rating analytics view showing all ratings for each book
 - **RESTful API:** A fully secured Node.js backend using Express that handles structured interactions with the PostgreSQL database.
 - **Data Security:** Passwords are cryptographically hashed using `bcryptjs`. Separate JWT tokens for authors and readers. Mutating API endpoints are protected with strict authorization checks and ownership validation.
 - **Offline Capabilities:** Uses a Service Worker (`sw.js`) to provide offline caching and PWA installation.
@@ -28,10 +40,10 @@ inkspace/
 │   │   ├── index.js       # Health check routes
 │   │   ├── authors.js     # Author auth & management
 │   │   ├── readers.js     # Reader auth & management
-│   │   ├── books.js       # Book CRUD operations
+│   │   ├── books.js       # Book CRUD operations (includes review/comment replies)
 │   │   ├── chapters.js    # Chapter management
 │   │   ├── user.js        # User interactions (follows, bookmarks)
-│   │   └── interactions.js # Reader interactions (bookmarks, history, follows, ratings)
+│   │   └── interactions.js # Reader interactions (bookmarks, history, follows, ratings, reviews, comments, replies)
 │   ├── middleware/        # Express middleware
 │   │   └── auth.js        # JWT authentication
 │   └── db/                # Database layer
@@ -42,6 +54,10 @@ inkspace/
 │           ├── books.js
 │           ├── chapters.js
 │           ├── ratings.js
+│           ├── reviews.js         # Review CRUD operations
+│           ├── comments.js        # Comment CRUD operations
+│           ├── reviewReplies.js   # Review reply operations
+│           ├── commentReplies.js  # Comment reply operations
 │           └── interactions.js
 ├── src/                   # Frontend source (bundled by Vite)
 │   ├── main.js            # Application entry point
@@ -49,13 +65,14 @@ inkspace/
 │   │   └── index.js
 │   ├── store/             # State management & API client
 │   │   └── index.js
-│   ├── views/             # Page components (13 files)
+│   ├── views/             # Page components (14 files)
 │   │   ├── home.js
 │   │   ├── workDetail.js
 │   │   ├── read.js
 │   │   ├── authorProfile.js
 │   │   ├── authorLogin.js
 │   │   ├── authorDashboard.js
+│   │   ├── bookReviews.js      # Review analytics page for authors
 │   │   ├── readerLogin.js
 │   │   ├── readerSignup.js
 │   │   ├── readerDashboard.js
@@ -67,6 +84,9 @@ inkspace/
 │   ├── components/        # Reusable UI components
 │   │   ├── workCard.js
 │   │   ├── ratingStars.js
+│   │   ├── reviewCard.js       # Review display with reply functionality
+│   │   ├── reviewForm.js       # Review creation/editing form
+│   │   ├── replyThread.js      # Threaded conversation component
 │   │   ├── notFound.js
 │   │   └── toast.js
 │   └── utils/             # Utility functions (for future use)
@@ -204,6 +224,32 @@ The auto-seeder initializes demo accounts for testing:
 - `GET /api/interactions/ratings/:bookId/user` - Get current reader's rating for a book
 - `POST /api/interactions/ratings` - Create or update rating (1-5 stars)
 - `DELETE /api/interactions/ratings/:bookId` - Delete rating
+
+### Review & Comment Endpoints
+
+**Public (no auth required):**
+- `GET /api/interactions/reviews/:bookId` - Get all reviews for a book
+- `GET /api/interactions/comments/:bookId` - Get all comments for a book
+- `GET /api/interactions/reviews/:reviewId/replies` - Get replies to a review
+- `GET /api/interactions/comments/:commentId/replies` - Get replies to a comment
+
+**Reader Authenticated (require Authorization: Bearer <ink_reader_token>):**
+- `POST /api/interactions/reviews` - Create or update review (one per book)
+- `DELETE /api/interactions/reviews/:reviewId` - Delete own review
+- `POST /api/interactions/reviews/:reviewId/helpful` - Mark review as helpful
+- `POST /api/interactions/comments` - Post a comment on a book
+- `POST /api/interactions/reviews/:reviewId/replies` - Reply to a review
+- `DELETE /api/interactions/reviews/:reviewId/replies/:replyId` - Delete own reply
+- `POST /api/interactions/comments/:commentId/replies` - Reply to a comment
+- `DELETE /api/interactions/comments/:commentId/replies/:replyId` - Delete own reply
+
+**Author Authenticated (require Authorization: Bearer <ink_token>):**
+- `GET /api/books/:bookId/reviews` - Get detailed reviews with statistics for author's book
+- `GET /api/books/:bookId/ratings` - Get all ratings for author's book
+- `POST /api/books/:id/reviews/:reviewId/replies` - Author replies to review on their book
+- `DELETE /api/books/:id/reviews/:reviewId/replies/:replyId` - Delete own reply
+- `POST /api/books/:id/comments/:commentId/replies` - Author replies to comment on their book
+- `DELETE /api/books/:id/comments/:commentId/replies/:replyId` - Delete own reply
 
 *Note: Authors and readers use separate authentication tokens stored in different localStorage keys.*
 
