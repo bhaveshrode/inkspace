@@ -57,6 +57,23 @@ window.logout = function () {
   router.navigate('home');
 };
 
+// Toggle user dropdown menu
+window.toggleUserDropdown = function () {
+  const dropdown = document.getElementById('user-dropdown');
+  if (dropdown) {
+    dropdown.classList.toggle('hidden');
+  }
+};
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function (e) {
+  const userMenu = document.getElementById('user-menu');
+  const dropdown = document.getElementById('user-dropdown');
+  if (userMenu && dropdown && !userMenu.contains(e.target)) {
+    dropdown.classList.add('hidden');
+  }
+});
+
 window.showToast = showToast;
 
 // Global search handler
