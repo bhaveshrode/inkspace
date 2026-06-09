@@ -9,3 +9,6 @@ export { addWork } from './addWork.js';
 export { manageWork } from './manageWork.js';
 export { editChapter } from './editChapter.js';
 export { searchResults } from './searchResults.js';
+export { readerLogin } from './readerLogin.js';
+export { readerSignup } from './readerSignup.js';
+export { readerDashboard } from './readerDashboard.js';

@@ -1,7 +1,13 @@
-export function workCard(work, isContinue = false, authorName = 'Unknown', router) {
+export function workCard(work, isContinue = false, authorName = 'Unknown', routerInstance = null) {
   const div = document.createElement('div');
   div.className = 'bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-md transition duration-300 flex flex-col h-full cursor-pointer group';
-  div.onclick = () => router.navigate('work-detail', { id: work.id });
+  div.onclick = () => {
+    if (routerInstance) {
+      routerInstance.navigate('work-detail', { id: work.id });
+    } else if (window.router) {
+      window.router.navigate('work-detail', { id: work.id });
+    }
+  };
   div.innerHTML = `
     <div class="h-48 overflow-hidden relative">
       <img src="${work.cover || 'https://via.placeholder.com/400x300'}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
@@ -18,10 +24,13 @@ export function workCard(work, isContinue = false, authorName = 'Unknown', route
         ${(work.tags || []).slice(0, 3).map(t => `<span class="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">#${t}</span>`).join('')}
       </div>
       <p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-3 mb-4 flex-grow">${work.description}</p>
-      <div class="text-xs text-slate-400 mt-auto pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between">
+      <div class="text-xs text-slate-500 dark:text-slate-400 mt-auto pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between">
         <span><i class="fa-solid fa-eye mr-1"></i>${work.views || 0}</span>
         <span>${new Date(work.createdAt).toLocaleDateString()}</span>
       </div>
     </div>`;
   return div;
 }
+
+// Export capitalized version for compatibility
+export const WorkCard = workCard;

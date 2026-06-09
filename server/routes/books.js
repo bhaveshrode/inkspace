@@ -2,6 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { authenticate, JWT_SECRET } from '../middleware/auth.js';
 import * as booksModel from '../db/models/books.js';
+import * as ratingsModel from '../db/models/ratings.js';
 
 const router = express.Router();
 
@@ -35,7 +36,8 @@ router.get('/:id', async (req, res) => {
   try {
     const b = await booksModel.getBookById(req.params.id);
     if (!b) return res.status(404).json({ error: 'Book not found' });
-    res.json(b);
+    const ratingData = await ratingsModel.getAverageRating(req.params.id);
+    res.json({ ...b, averageRating: ratingData.average, ratingCount: ratingData.count });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -87,19 +89,33 @@ router.get('/:id/comments', async (req, res) => {
 
 // Add comment to a book
 router.post('/:id/comments', async (req, res) => {
-  // Allow unauthenticated comments (as guest) or from token if passed
   try {
+    let readerId = null;
     let user = req.body.user || 'Guest';
+
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
       try {
         const payload = jwt.verify(req.headers.authorization.split(' ')[1], JWT_SECRET);
+        readerId = payload.id;
         user = payload.name;
       } catch (e) {}
     }
+
     const { text } = req.body;
     if (!text) return res.status(400).json({ error: 'Missing text' });
-    const c = await booksModel.addComment(req.params.id, { user, text });
+    const c = await booksModel.addComment(req.params.id, { readerId, user, text });
     res.json(c);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get average rating for a book
+router.get('/:id/ratings', async (req, res) => {
+  try {
+    const ratingData = await ratingsModel.getAverageRating(req.params.id);
+    res.json(ratingData);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

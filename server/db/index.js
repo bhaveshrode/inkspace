@@ -60,6 +60,16 @@ async function init() {
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
   );`);
 
+  await pool.query(`CREATE TABLE IF NOT EXISTS readers (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    avatar TEXT,
+    bio TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+  );`);
+
   await pool.query(`CREATE TABLE IF NOT EXISTS books (
     id TEXT PRIMARY KEY,
     author_id TEXT NOT NULL,
@@ -89,7 +99,9 @@ async function init() {
     follower_id TEXT NOT NULL,
     author_id TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    PRIMARY KEY(follower_id, author_id)
+    PRIMARY KEY(follower_id, author_id),
+    FOREIGN KEY(follower_id) REFERENCES readers(id) ON DELETE CASCADE,
+    FOREIGN KEY(author_id) REFERENCES authors(id) ON DELETE CASCADE
   );`);
 
   await pool.query(`CREATE TABLE IF NOT EXISTS reading_history (
@@ -97,7 +109,9 @@ async function init() {
     user_id TEXT NOT NULL,
     book_id TEXT NOT NULL,
     chapter_index INTEGER,
-    read_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+    read_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    FOREIGN KEY(user_id) REFERENCES readers(id) ON DELETE CASCADE,
+    FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE
   );`);
 
   await pool.query(`CREATE TABLE IF NOT EXISTS bookmarks (
@@ -105,7 +119,9 @@ async function init() {
     user_id TEXT NOT NULL,
     book_id TEXT NOT NULL,
     chapter_index INTEGER,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    FOREIGN KEY(user_id) REFERENCES readers(id) ON DELETE CASCADE,
+    FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE
   );`);
 
   await pool.query(`CREATE TABLE IF NOT EXISTS likes (
@@ -113,15 +129,31 @@ async function init() {
     user_id TEXT NOT NULL,
     book_id TEXT NOT NULL,
     chapter_index INTEGER,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    FOREIGN KEY(user_id) REFERENCES readers(id) ON DELETE CASCADE,
+    FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE
+  );`);
+
+  await pool.query(`CREATE TABLE IF NOT EXISTS ratings (
+    id TEXT PRIMARY KEY,
+    reader_id TEXT NOT NULL,
+    book_id TEXT NOT NULL,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    FOREIGN KEY(reader_id) REFERENCES readers(id) ON DELETE CASCADE,
+    FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE,
+    UNIQUE(reader_id, book_id)
   );`);
 
   await pool.query(`CREATE TABLE IF NOT EXISTS comments (
     id TEXT PRIMARY KEY,
     book_id TEXT NOT NULL,
-    user_name TEXT NOT NULL,
+    reader_id TEXT,
+    user_name TEXT,
     text TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE,
+    FOREIGN KEY(reader_id) REFERENCES readers(id) ON DELETE SET NULL
   );`);
 
   // Seed demo data if no authors
@@ -135,6 +167,11 @@ async function seed() {
   const a2 = uuidv4();
   await pool.query('INSERT INTO authors (id,name,email,password_hash,bio,avatar,followers) VALUES ($1,$2,$3,$4,$5,$6,$7)', [a1, 'Elena Fisher', 'elena@inkspace.com', bcrypt.hashSync('password', 10), 'Fantasy writer and coffee enthusiast.', 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80', 142]);
   await pool.query('INSERT INTO authors (id,name,email,password_hash,bio,avatar,followers) VALUES ($1,$2,$3,$4,$5,$6,$7)', [a2, 'Marcus Chen', 'marcus@inkspace.com', bcrypt.hashSync('password', 10), 'Sci-fi nerd and physicist.', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80', 89]);
+
+  const r1 = uuidv4();
+  const r2 = uuidv4();
+  await pool.query('INSERT INTO readers (id,name,email,password_hash,bio,avatar) VALUES ($1,$2,$3,$4,$5,$6)', [r1, 'Alex Reader', 'reader1@inkspace.com', bcrypt.hashSync('password', 10), 'Book lover', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80']);
+  await pool.query('INSERT INTO readers (id,name,email,password_hash,bio,avatar) VALUES ($1,$2,$3,$4,$5,$6)', [r2, 'Sam Bookworm', 'reader2@inkspace.com', bcrypt.hashSync('password', 10), 'Reading enthusiast', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80']);
 
   const b1 = uuidv4();
   const b2 = uuidv4();

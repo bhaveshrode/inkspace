@@ -48,6 +48,34 @@
                     Install App
                 </button>
 
+                <button onclick="router.navigate('reader-login')" class="hidden md:block px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition" id="reader-login-btn">
+                    <i class="fa-solid fa-book-reader mr-1"></i>
+                    Reader Login
+                </button>
+
+                <div id="reader-menu" class="hidden relative ml-3">
+                    <button id="reader-menu-button" onclick="toggleReaderDropdown()" class="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition">
+                        <div class="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-sm">
+                            <span id="reader-initial">R</span>
+                        </div>
+                        <span id="reader-name" class="text-sm font-medium text-slate-700 dark:text-slate-200">Reader</span>
+                        <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+                    </button>
+
+                    <div id="reader-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg border border-slate-200 dark:border-slate-700 z-50">
+                        <div class="py-1">
+                            <button onclick="router.navigate('reader-dashboard')" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center">
+                                <i class="fa-solid fa-gauge mr-3 w-4"></i>
+                                Dashboard
+                            </button>
+                            <button onclick="readerLogout()" class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center">
+                                <i class="fa-solid fa-right-from-bracket mr-3 w-4"></i>
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="user-menu" class="hidden relative ml-3">
                     <button id="user-menu-button" onclick="toggleUserDropdown()" class="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition">
                         <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">
@@ -57,7 +85,6 @@
                         <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
                     </button>
 
-                    <!-- Dropdown Menu -->
                     <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg border border-slate-200 dark:border-slate-700 z-50">
                         <div class="py-1">
                             <button onclick="router.navigate('author-dashboard')" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center">
@@ -84,10 +111,10 @@
 <!-- Footer -->
 <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 mt-auto transition-colors">
     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
-        <p class="text-sm text-slate-500 dark:text-slate-400">
+        <p class="text-sm text-slate-600 dark:text-slate-400">
             InkSpace. A platform for writers and readers.
         </p>
-        <a href="#/author" onclick="router.navigate('author-login')" class="text-xs text-slate-300 dark:text-slate-600 hover:text-slate-500 mt-2 md:mt-0 transition">
+        <a href="#/author" onclick="router.navigate('author-login')" class="text-xs text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 mt-2 md:mt-0 transition">
             Author Access
         </a>
     </div>

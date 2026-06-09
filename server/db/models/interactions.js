@@ -55,3 +55,65 @@ export async function getUserReadingHistory(userId) {
   return res.rows;
 }
 
+export async function getBookmarksWithDetails(userId) {
+  const pool = getPool();
+  const res = await pool.query(`
+    SELECT b.id, b.author_id, b.title, b.genre, b.series, b.tags, b.cover, b.description, b.status, b.views, b.created_at,
+           bm.chapter_index, bm.created_at as bookmarked_at,
+           a.name as author_name
+    FROM bookmarks bm
+    JOIN books b ON bm.book_id = b.id
+    JOIN authors a ON b.author_id = a.id
+    WHERE bm.user_id = $1
+    ORDER BY bm.created_at DESC
+  `, [userId]);
+  return res.rows.map(b => ({ ...b, tags: b.tags ? JSON.parse(b.tags) : [] }));
+}
+
+export async function getReadingHistoryWithDetails(userId) {
+  const pool = getPool();
+  const res = await pool.query(`
+    SELECT DISTINCT ON (rh.book_id)
+           b.id, b.author_id, b.title, b.genre, b.series, b.tags, b.cover, b.description, b.status, b.views, b.created_at,
+           rh.chapter_index, rh.read_at as last_read,
+           a.name as author_name
+    FROM reading_history rh
+    JOIN books b ON rh.book_id = b.id
+    JOIN authors a ON b.author_id = a.id
+    WHERE rh.user_id = $1
+    ORDER BY rh.book_id, rh.read_at DESC
+  `, [userId]);
+  return res.rows.map(b => ({ ...b, tags: b.tags ? JSON.parse(b.tags) : [] }));
+}
+
+export async function getFollowedAuthorsWithDetails(followerId) {
+  const pool = getPool();
+  const res = await pool.query(`
+    SELECT a.id, a.name, a.email, a.bio, a.avatar, a.followers, a.created_at,
+           f.created_at as followed_at
+    FROM follows f
+    JOIN authors a ON f.author_id = a.id
+    WHERE f.follower_id = $1
+    ORDER BY f.created_at DESC
+  `, [followerId]);
+  return res.rows;
+}
+
+export async function getAuthorFollowerCount(authorId) {
+  const pool = getPool();
+  const res = await pool.query('SELECT COUNT(*) as count FROM follows WHERE author_id = $1', [authorId]);
+  return parseInt(res.rows[0].count, 10);
+}
+
+export async function isFollowing(followerId, authorId) {
+  const pool = getPool();
+  const res = await pool.query('SELECT 1 FROM follows WHERE follower_id = $1 AND author_id = $2', [followerId, authorId]);
+  return res.rows.length > 0;
+}
+
+export async function hasBookmark(userId, bookId) {
+  const pool = getPool();
+  const res = await pool.query('SELECT chapter_index FROM bookmarks WHERE user_id = $1 AND book_id = $2', [userId, bookId]);
+  return res.rows[0] || null;
+}
+

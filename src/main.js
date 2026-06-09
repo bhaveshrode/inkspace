@@ -57,6 +57,14 @@ window.logout = function () {
   router.navigate('home');
 };
 
+window.readerLogout = function () {
+  store.currentReader = null;
+  localStorage.removeItem('ink_reader_token');
+  store.saveLocal();
+  showToast('Logged out', 'success');
+  router.navigate('home');
+};
+
 // Toggle user dropdown menu
 window.toggleUserDropdown = function () {
   const dropdown = document.getElementById('user-dropdown');
@@ -65,12 +73,26 @@ window.toggleUserDropdown = function () {
   }
 };
 
+// Toggle reader dropdown menu
+window.toggleReaderDropdown = function () {
+  const dropdown = document.getElementById('reader-dropdown');
+  if (dropdown) {
+    dropdown.classList.toggle('hidden');
+  }
+};
+
 // Close dropdown when clicking outside
 document.addEventListener('click', function (e) {
   const userMenu = document.getElementById('user-menu');
-  const dropdown = document.getElementById('user-dropdown');
-  if (userMenu && dropdown && !userMenu.contains(e.target)) {
-    dropdown.classList.add('hidden');
+  const userDropdown = document.getElementById('user-dropdown');
+  const readerMenu = document.getElementById('reader-menu');
+  const readerDropdown = document.getElementById('reader-dropdown');
+
+  if (userMenu && userDropdown && !userMenu.contains(e.target)) {
+    userDropdown.classList.add('hidden');
+  }
+  if (readerMenu && readerDropdown && !readerMenu.contains(e.target)) {
+    readerDropdown.classList.add('hidden');
   }
 });
 

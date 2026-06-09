@@ -42,14 +42,35 @@ export async function deleteBook(id) {
 
 export async function getComments(bookId) {
   const pool = getPool();
-  const res = await pool.query('SELECT user_name as user, text, created_at as date FROM comments WHERE book_id = $1 ORDER BY created_at ASC', [bookId]);
+  const res = await pool.query(`
+    SELECT c.id, c.text, c.created_at as date,
+           COALESCE(r.name, c.user_name, 'Guest') as user,
+           r.avatar as avatar
+    FROM comments c
+    LEFT JOIN readers r ON c.reader_id = r.id
+    WHERE c.book_id = $1
+    ORDER BY c.created_at ASC
+  `, [bookId]);
   return res.rows;
 }
 
-export async function addComment(bookId, { user, text }) {
+export async function addComment(bookId, { readerId = null, user = null, text }) {
   const pool = getPool();
   const id = uuidv4();
-  await pool.query('INSERT INTO comments (id, book_id, user_name, text) VALUES ($1,$2,$3,$4)', [id, bookId, user || 'Guest', text]);
-  return { id, user: user || 'Guest', text, date: new Date().toISOString() };
+  if (readerId) {
+    await pool.query('INSERT INTO comments (id, book_id, reader_id, text) VALUES ($1,$2,$3,$4)', [id, bookId, readerId, text]);
+  } else {
+    await pool.query('INSERT INTO comments (id, book_id, user_name, text) VALUES ($1,$2,$3,$4)', [id, bookId, user || 'Guest', text]);
+  }
+
+  const result = await pool.query(`
+    SELECT c.id, c.text, c.created_at as date,
+           COALESCE(r.name, c.user_name, 'Guest') as user,
+           r.avatar as avatar
+    FROM comments c
+    LEFT JOIN readers r ON c.reader_id = r.id
+    WHERE c.id = $1
+  `, [id]);
+  return result.rows[0];
 }
 

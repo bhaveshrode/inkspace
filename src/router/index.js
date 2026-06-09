@@ -23,14 +23,28 @@ export const router = {
 
   updateNav() {
     const userMenu = document.getElementById('user-menu');
+    const readerMenu = document.getElementById('reader-menu');
+    const readerLoginBtn = document.getElementById('reader-login-btn');
     const searchContainer = document.getElementById('nav-search-container');
+
     if (store.currentUser) {
       userMenu.classList.remove('hidden');
+      readerMenu.classList.add('hidden');
+      if (readerLoginBtn) readerLoginBtn.classList.add('hidden');
       document.getElementById('user-name').textContent = store.currentUser.name;
       document.getElementById('user-initial').textContent = store.currentUser.name.charAt(0);
+    } else if (store.currentReader) {
+      readerMenu.classList.remove('hidden');
+      userMenu.classList.add('hidden');
+      if (readerLoginBtn) readerLoginBtn.classList.add('hidden');
+      document.getElementById('reader-name').textContent = store.currentReader.name;
+      document.getElementById('reader-initial').textContent = store.currentReader.name.charAt(0);
     } else {
       userMenu.classList.add('hidden');
+      readerMenu.classList.add('hidden');
+      if (readerLoginBtn) readerLoginBtn.classList.remove('hidden');
     }
+
     if (['home', 'search'].includes(this.currentPage)) searchContainer.classList.remove('hidden');
     else searchContainer.classList.add('hidden');
   },
@@ -86,6 +100,19 @@ export const router = {
           break;
         case 'search':
           view = await views.searchResults(this.params.query);
+          break;
+        case 'reader-login':
+          view = await views.readerLogin();
+          break;
+        case 'reader-signup':
+          view = await views.readerSignup();
+          break;
+        case 'reader-dashboard':
+          if (!store.currentReader) {
+            this.navigate('reader-login');
+            return;
+          }
+          view = await views.readerDashboard();
           break;
         default:
           view = await views.home();
