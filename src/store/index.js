@@ -358,5 +358,33 @@ export const store = {
 
   async getAuthorComments() {
     return this.apiFetch('/api/authors/comments/me');
+  },
+
+  // Author reply to reviews
+  async replyToReview(bookId, reviewId, replyText) {
+    return this.apiFetch(`/api/books/${bookId}/reviews/${reviewId}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ replyText })
+    });
+  },
+
+  async deleteReviewReply(bookId, reviewId) {
+    return this.apiFetch(`/api/books/${bookId}/reviews/${reviewId}/reply`, {
+      method: 'DELETE'
+    });
+  },
+
+  // Author reply to comments
+  async replyToComment(bookId, commentId, replyText) {
+    return this.apiFetch(`/api/books/${bookId}/comments/${commentId}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ replyText })
+    });
+  },
+
+  async deleteCommentReply(bookId, commentId) {
+    return this.apiFetch(`/api/books/${bookId}/comments/${commentId}/reply`, {
+      method: 'DELETE'
+    });
   }
 };

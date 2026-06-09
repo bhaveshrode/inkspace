@@ -8,6 +8,8 @@ export async function getCommentsByBookId(bookId) {
     SELECT
       c.id,
       c.text,
+      c.author_reply,
+      c.author_reply_at,
       c.created_at as date,
       COALESCE(r.name, c.user_name, 'Guest') as user,
       r.id as reader_id,
@@ -79,6 +81,8 @@ export async function getCommentsForAuthorBooks(authorId) {
     SELECT
       c.id,
       c.text,
+      c.author_reply,
+      c.author_reply_at,
       c.created_at as date,
       COALESCE(r.name, c.user_name, 'Guest') as user,
       r.id as reader_id,
@@ -103,4 +107,67 @@ export async function getCommentCountByBookId(bookId) {
     [bookId]
   );
   return parseInt(res.rows[0].count, 10);
+}
+
+// Reply to a comment (author only)
+export async function replyToComment(authorId, commentId, replyText) {
+  const pool = getPool();
+
+  // Verify book ownership - get comment's book and check author
+  const checkRes = await pool.query(`
+    SELECT b.author_id
+    FROM comments c
+    JOIN books b ON c.book_id = b.id
+    WHERE c.id = $1
+  `, [commentId]);
+
+  if (checkRes.rows.length === 0) {
+    throw new Error('Comment not found');
+  }
+
+  if (checkRes.rows[0].author_id !== authorId) {
+    throw new Error('Forbidden: You can only reply to comments on your own books');
+  }
+
+  // Update comment with author reply
+  const now = new Date();
+  const res = await pool.query(`
+    UPDATE comments
+    SET author_reply = $1, author_reply_at = $2
+    WHERE id = $3
+    RETURNING *
+  `, [replyText, now, commentId]);
+
+  return res.rows[0] || null;
+}
+
+// Delete a comment reply (author only)
+export async function deleteCommentReply(authorId, commentId) {
+  const pool = getPool();
+
+  // Verify book ownership
+  const checkRes = await pool.query(`
+    SELECT b.author_id
+    FROM comments c
+    JOIN books b ON c.book_id = b.id
+    WHERE c.id = $1
+  `, [commentId]);
+
+  if (checkRes.rows.length === 0) {
+    throw new Error('Comment not found');
+  }
+
+  if (checkRes.rows[0].author_id !== authorId) {
+    throw new Error('Forbidden: You can only delete replies on your own books');
+  }
+
+  // Remove author reply
+  const res = await pool.query(`
+    UPDATE comments
+    SET author_reply = NULL, author_reply_at = NULL
+    WHERE id = $1
+    RETURNING *
+  `, [commentId]);
+
+  return res.rows[0] || null;
 }

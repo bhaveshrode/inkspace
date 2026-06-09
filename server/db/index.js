@@ -153,6 +153,8 @@ async function init() {
     title TEXT NOT NULL,
     review_text TEXT NOT NULL,
     helpful_count INTEGER DEFAULT 0,
+    author_reply TEXT,
+    author_reply_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE,
@@ -175,6 +177,8 @@ async function init() {
     reader_id TEXT,
     user_name TEXT,
     text TEXT NOT NULL,
+    author_reply TEXT,
+    author_reply_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE,
     FOREIGN KEY(reader_id) REFERENCES readers(id) ON DELETE SET NULL

@@ -11,6 +11,8 @@ export async function getReviewsByBookId(bookId) {
       r.title,
       r.review_text,
       r.helpful_count,
+      r.author_reply,
+      r.author_reply_at,
       r.created_at,
       r.updated_at,
       rd.id as reader_id,
@@ -34,6 +36,8 @@ export async function getReviewByReaderAndBook(readerId, bookId) {
       r.title,
       r.review_text,
       r.helpful_count,
+      r.author_reply,
+      r.author_reply_at,
       r.created_at,
       r.updated_at,
       rd.id as reader_id,
@@ -107,6 +111,8 @@ export async function getReviewsForAuthorBooks(authorId) {
       r.title,
       r.review_text,
       r.helpful_count,
+      r.author_reply,
+      r.author_reply_at,
       r.created_at,
       r.updated_at,
       rd.id as reader_id,
@@ -201,4 +207,67 @@ export async function getReviewStatsByBookId(bookId) {
     WHERE book_id = $1
   `, [bookId]);
   return res.rows[0] || { total_reviews: 0, average_rating: 0 };
+}
+
+// Reply to a review (author only)
+export async function replyToReview(authorId, reviewId, replyText) {
+  const pool = getPool();
+
+  // Verify book ownership - get review's book and check author
+  const checkRes = await pool.query(`
+    SELECT b.author_id
+    FROM reviews r
+    JOIN books b ON r.book_id = b.id
+    WHERE r.id = $1
+  `, [reviewId]);
+
+  if (checkRes.rows.length === 0) {
+    throw new Error('Review not found');
+  }
+
+  if (checkRes.rows[0].author_id !== authorId) {
+    throw new Error('Forbidden: You can only reply to reviews on your own books');
+  }
+
+  // Update review with author reply
+  const now = new Date();
+  const res = await pool.query(`
+    UPDATE reviews
+    SET author_reply = $1, author_reply_at = $2
+    WHERE id = $3
+    RETURNING *
+  `, [replyText, now, reviewId]);
+
+  return res.rows[0] || null;
+}
+
+// Delete a review reply (author only)
+export async function deleteReviewReply(authorId, reviewId) {
+  const pool = getPool();
+
+  // Verify book ownership
+  const checkRes = await pool.query(`
+    SELECT b.author_id
+    FROM reviews r
+    JOIN books b ON r.book_id = b.id
+    WHERE r.id = $1
+  `, [reviewId]);
+
+  if (checkRes.rows.length === 0) {
+    throw new Error('Review not found');
+  }
+
+  if (checkRes.rows[0].author_id !== authorId) {
+    throw new Error('Forbidden: You can only delete replies on your own books');
+  }
+
+  // Remove author reply
+  const res = await pool.query(`
+    UPDATE reviews
+    SET author_reply = NULL, author_reply_at = NULL
+    WHERE id = $1
+    RETURNING *
+  `, [reviewId]);
+
+  return res.rows[0] || null;
 }

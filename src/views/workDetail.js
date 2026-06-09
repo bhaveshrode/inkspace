@@ -310,11 +310,19 @@ export async function workDetail(id) {
         noReviews.innerHTML = '<p>No reviews yet. Be the first to review!</p>';
         reviewsContainer.appendChild(noReviews);
       } else {
+        const isAuthor = store.currentUser && work.authorId === store.currentUser.id;
         reviews.forEach(review => {
           const reviewCard = ReviewCard({
             review,
             currentReaderId: store.currentReader?.id,
             hasVotedHelpful: helpfulVotes.includes(review.id),
+            isAuthor,
+            bookId: id,
+            authorName: author.name,
+            onReplyUpdate: () => {
+              reviewsLoaded = false;
+              loadReviews();
+            },
             onDelete: async (reviewId) => {
               try {
                 await store.deleteReview(id);
@@ -452,6 +460,7 @@ export async function workDetail(id) {
       } else {
         const commentsListContainer = document.createElement('div');
         commentsListContainer.className = 'space-y-4';
+        const isAuthor = store.currentUser && work.authorId === store.currentUser.id;
 
         comments.forEach(comment => {
           const commentCard = document.createElement('div');
@@ -463,6 +472,13 @@ export async function workDetail(id) {
             month: 'short',
             day: 'numeric'
           });
+
+          const hasReply = comment.author_reply && comment.author_reply.trim().length > 0;
+          const replyDate = hasReply && comment.author_reply_at ? new Date(comment.author_reply_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          }) : '';
 
           commentCard.innerHTML = `
             <div class="flex items-start gap-3">
@@ -482,7 +498,42 @@ export async function workDetail(id) {
                     </button>
                   ` : ''}
                 </div>
-                <p class="text-slate-700 dark:text-slate-300">${comment.text}</p>
+                <p class="text-slate-700 dark:text-slate-300 mb-3">${comment.text}</p>
+
+                ${hasReply ? `
+                  <div class="bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-indigo-500 rounded-lg p-3 mt-3">
+                    <div class="flex items-start gap-2">
+                      <i class="fa-solid fa-book text-indigo-600 dark:text-indigo-400 text-sm mt-1"></i>
+                      <div class="flex-1">
+                        <div class="flex items-center justify-between mb-1">
+                          <div>
+                            <span class="font-semibold text-indigo-900 dark:text-indigo-100 text-sm">${author.name}</span>
+                            <span class="ml-2 px-2 py-0.5 bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 text-xs rounded-full font-medium">Author</span>
+                          </div>
+                          ${isAuthor ? `
+                            <div class="flex gap-2">
+                              <button id="edit-comment-reply-${comment.id}" class="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                                <i class="fa-solid fa-edit"></i>
+                              </button>
+                              <button id="delete-comment-reply-${comment.id}" class="text-sm text-red-600 hover:text-red-700 dark:text-red-400">
+                                <i class="fa-solid fa-trash"></i>
+                              </button>
+                            </div>
+                          ` : ''}
+                        </div>
+                        <p class="text-indigo-900 dark:text-indigo-100 text-sm leading-relaxed">${comment.author_reply}</p>
+                        <p class="text-xs text-indigo-600 dark:text-indigo-400 mt-1">${replyDate}</p>
+                      </div>
+                    </div>
+                  </div>
+                ` : ''}
+
+                ${isAuthor && !hasReply ? `
+                  <div id="comment-reply-section-${comment.id}"></div>
+                  <button id="reply-to-comment-${comment.id}" class="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 mt-2">
+                    <i class="fa-solid fa-reply mr-1"></i>Reply
+                  </button>
+                ` : ''}
               </div>
             </div>
           `;
@@ -501,6 +552,112 @@ export async function workDetail(id) {
                 }
               }
             });
+          }
+
+          // Author reply functionality
+          if (isAuthor) {
+            function showCommentReplyForm(existingReply = '') {
+              const replySection = commentCard.querySelector(`#comment-reply-section-${comment.id}`);
+              if (!replySection) return;
+
+              replySection.innerHTML = `
+                <div class="bg-slate-50 dark:bg-slate-700 rounded-lg p-3 mt-3">
+                  <textarea
+                    id="comment-reply-text-${comment.id}"
+                    rows="2"
+                    placeholder="Write your reply..."
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none mb-2"
+                  >${existingReply}</textarea>
+                  <div class="flex items-center justify-between">
+                    <span id="comment-char-count-${comment.id}" class="text-xs text-slate-500 dark:text-slate-400">
+                      ${existingReply.length}/2000 characters
+                    </span>
+                    <div class="flex gap-2">
+                      <button id="cancel-comment-reply-${comment.id}" class="px-3 py-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+                        Cancel
+                      </button>
+                      <button id="submit-comment-reply-${comment.id}" class="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-xs font-medium">
+                        Submit
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+
+              const textarea = replySection.querySelector(`#comment-reply-text-${comment.id}`);
+              const charCount = replySection.querySelector(`#comment-char-count-${comment.id}`);
+              const cancelBtn = replySection.querySelector(`#cancel-comment-reply-${comment.id}`);
+              const submitBtn = replySection.querySelector(`#submit-comment-reply-${comment.id}`);
+
+              textarea.addEventListener('input', () => {
+                charCount.textContent = `${textarea.value.length}/2000 characters`;
+                if (textarea.value.length > 2000) {
+                  charCount.classList.add('text-red-600');
+                  submitBtn.disabled = true;
+                } else {
+                  charCount.classList.remove('text-red-600');
+                  submitBtn.disabled = false;
+                }
+              });
+
+              cancelBtn.addEventListener('click', () => {
+                replySection.innerHTML = '';
+                const replyBtn = commentCard.querySelector(`#reply-to-comment-${comment.id}`);
+                if (replyBtn) replyBtn.style.display = '';
+              });
+
+              submitBtn.addEventListener('click', async () => {
+                const replyText = textarea.value.trim();
+                if (!replyText) {
+                  showToast('Please enter a reply', 'error');
+                  return;
+                }
+                if (replyText.length > 2000) {
+                  showToast('Reply must be 2000 characters or less', 'error');
+                  return;
+                }
+
+                try {
+                  await store.replyToComment(id, comment.id, replyText);
+                  showToast('Reply posted!');
+                  commentsLoaded = false;
+                  loadComments();
+                } catch (err) {
+                  showToast(err.message, 'error');
+                }
+              });
+
+              textarea.focus();
+            }
+
+            const replyBtn = commentCard.querySelector(`#reply-to-comment-${comment.id}`);
+            if (replyBtn) {
+              replyBtn.addEventListener('click', () => {
+                replyBtn.style.display = 'none';
+                showCommentReplyForm();
+              });
+            }
+
+            const editReplyBtn = commentCard.querySelector(`#edit-comment-reply-${comment.id}`);
+            if (editReplyBtn) {
+              editReplyBtn.addEventListener('click', () => showCommentReplyForm(comment.author_reply || ''));
+            }
+
+            const deleteReplyBtn = commentCard.querySelector(`#delete-comment-reply-${comment.id}`);
+            if (deleteReplyBtn) {
+              deleteReplyBtn.addEventListener('click', async () => {
+                if (confirm('Delete your reply?')) {
+                  try {
+                    await store.deleteCommentReply(id, comment.id);
+                    showToast('Reply deleted');
+                    commentsLoaded = false;
+                    loadComments();
+                  } catch (err) {
+                    showToast(err.message, 'error');
+                  }
+                }
+              });
+            }
           }
 
           commentsListContainer.appendChild(commentCard);

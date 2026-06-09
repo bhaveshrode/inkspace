@@ -181,4 +181,88 @@ router.get('/:id/comments/detailed', authenticate, async (req, res) => {
   }
 });
 
+// Reply to a review (author only)
+router.post('/:id/reviews/:reviewId/reply', authenticate, async (req, res) => {
+  try {
+    const { replyText } = req.body;
+    if (!replyText || replyText.trim().length === 0) {
+      return res.status(400).json({ error: 'Reply text is required' });
+    }
+    if (replyText.length > 2000) {
+      return res.status(400).json({ error: 'Reply must be 2000 characters or less' });
+    }
+
+    const review = await reviewsModel.replyToReview(req.user.id, req.params.reviewId, replyText);
+    res.json(review);
+  } catch (err) {
+    console.error(err);
+    if (err.message.includes('Forbidden')) {
+      return res.status(403).json({ error: err.message });
+    }
+    if (err.message.includes('not found')) {
+      return res.status(404).json({ error: err.message });
+    }
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Delete review reply (author only)
+router.delete('/:id/reviews/:reviewId/reply', authenticate, async (req, res) => {
+  try {
+    const review = await reviewsModel.deleteReviewReply(req.user.id, req.params.reviewId);
+    res.json(review);
+  } catch (err) {
+    console.error(err);
+    if (err.message.includes('Forbidden')) {
+      return res.status(403).json({ error: err.message });
+    }
+    if (err.message.includes('not found')) {
+      return res.status(404).json({ error: err.message });
+    }
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Reply to a comment (author only)
+router.post('/:id/comments/:commentId/reply', authenticate, async (req, res) => {
+  try {
+    const { replyText } = req.body;
+    if (!replyText || replyText.trim().length === 0) {
+      return res.status(400).json({ error: 'Reply text is required' });
+    }
+    if (replyText.length > 2000) {
+      return res.status(400).json({ error: 'Reply must be 2000 characters or less' });
+    }
+
+    const comment = await commentsModel.replyToComment(req.user.id, req.params.commentId, replyText);
+    res.json(comment);
+  } catch (err) {
+    console.error(err);
+    if (err.message.includes('Forbidden')) {
+      return res.status(403).json({ error: err.message });
+    }
+    if (err.message.includes('not found')) {
+      return res.status(404).json({ error: err.message });
+    }
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Delete comment reply (author only)
+router.delete('/:id/comments/:commentId/reply', authenticate, async (req, res) => {
+  try {
+    const comment = await commentsModel.deleteCommentReply(req.user.id, req.params.commentId);
+    res.json(comment);
+  } catch (err) {
+    console.error(err);
+    if (err.message.includes('Forbidden')) {
+      return res.status(403).json({ error: err.message });
+    }
+    if (err.message.includes('not found')) {
+      return res.status(404).json({ error: err.message });
+    }
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;
