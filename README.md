@@ -3,10 +3,11 @@
 InkSpace is a modern, maintainable full-stack web application for reading, writing, and discovering stories. It features a modular architecture with a PostgreSQL database, RESTful API using Express, and a bundled SPA frontend.
 
 ## Key Features
+- **Reader Accounts:** Dedicated reader authentication system with bookmarks, reading history tracking, author following, and 1-5 star ratings. Readers can comment on stories and manage their personal reading library.
 - **Reader Experience:** Browse trending stories, customize reading themes and font sizes, bookmark chapters, follow authors, and download works as PDFs.
 - **Author Portal:** Secure JWT-based authentication allows authors to publish works using a rich Quill editor, manage drafts, and track reading statistics.
 - **RESTful API:** A fully secured Node.js backend using Express that handles structured interactions with the PostgreSQL database.
-- **Data Security:** Passwords are cryptographically hashed using `bcryptjs`. Mutating API endpoints are protected with strict authorization checks and ownership validation.
+- **Data Security:** Passwords are cryptographically hashed using `bcryptjs`. Separate JWT tokens for authors and readers. Mutating API endpoints are protected with strict authorization checks and ownership validation.
 - **Offline Capabilities:** Uses a Service Worker (`sw.js`) to provide offline caching and PWA installation.
 
 ## Tech Stack
@@ -26,17 +27,21 @@ inkspace/
 │   ├── routes/            # API route handlers
 │   │   ├── index.js       # Health check routes
 │   │   ├── authors.js     # Author auth & management
+│   │   ├── readers.js     # Reader auth & management
 │   │   ├── books.js       # Book CRUD operations
 │   │   ├── chapters.js    # Chapter management
-│   │   └── user.js        # User interactions (follows, bookmarks)
+│   │   ├── user.js        # User interactions (follows, bookmarks)
+│   │   └── interactions.js # Reader interactions (bookmarks, history, follows, ratings)
 │   ├── middleware/        # Express middleware
 │   │   └── auth.js        # JWT authentication
 │   └── db/                # Database layer
 │       ├── index.js       # DB connection & initialization
 │       └── models/        # Data access layer
 │           ├── authors.js
+│           ├── readers.js
 │           ├── books.js
 │           ├── chapters.js
+│           ├── ratings.js
 │           └── interactions.js
 ├── src/                   # Frontend source (bundled by Vite)
 │   ├── main.js            # Application entry point
@@ -44,13 +49,16 @@ inkspace/
 │   │   └── index.js
 │   ├── store/             # State management & API client
 │   │   └── index.js
-│   ├── views/             # Page components (10 files)
+│   ├── views/             # Page components (13 files)
 │   │   ├── home.js
 │   │   ├── workDetail.js
 │   │   ├── read.js
 │   │   ├── authorProfile.js
 │   │   ├── authorLogin.js
 │   │   ├── authorDashboard.js
+│   │   ├── readerLogin.js
+│   │   ├── readerSignup.js
+│   │   ├── readerDashboard.js
 │   │   ├── addWork.js
 │   │   ├── manageWork.js
 │   │   ├── editChapter.js
@@ -58,6 +66,7 @@ inkspace/
 │   │   └── index.js       # View exports
 │   ├── components/        # Reusable UI components
 │   │   ├── workCard.js
+│   │   ├── ratingStars.js
 │   │   ├── notFound.js
 │   │   └── toast.js
 │   └── utils/             # Utility functions (for future use)
@@ -130,9 +139,15 @@ DATABASE_URL=postgresql://user:pass@host:port/dbname npm start
 
 ### Demo Accounts
 
-The auto-seeder initializes two author accounts for testing:
+The auto-seeder initializes demo accounts for testing:
+
+**Author Accounts:**
 - **elena@inkspace.com** / password
 - **marcus@inkspace.com** / password
+
+**Reader Accounts:**
+- **reader1@inkspace.com** / password
+- **reader2@inkspace.com** / password
 
 ## NPM Scripts
 
@@ -149,27 +164,48 @@ The auto-seeder initializes two author accounts for testing:
 - `GET /api/health` - Health check
 - `GET /api/authors` - List all authors
 - `GET /api/authors/:id` - Get author details
-- `GET /api/books` - List all published books
+- `GET /api/readers/:id` - Get reader profile (public)
+- `GET /api/books` - List all published books (includes average ratings)
 - `GET /api/books/:id` - Get book details with chapters
 - `GET /api/books/:id/comments` - Get book comments
 - `POST /api/authors` - Register new author
-- `POST /api/authors/login` - Authenticate and receive JWT
+- `POST /api/authors/login` - Authenticate and receive JWT (token: ink_token)
+- `POST /api/readers` - Register new reader
+- `POST /api/readers/login` - Authenticate and receive JWT (token: ink_reader_token)
 
-### Protected Endpoints (require Authorization header)
+### Protected Author Endpoints (require Authorization: Bearer <ink_token>)
 - `POST /api/books` - Publish a new book
 - `PUT /api/books/:id` - Update book details
 - `DELETE /api/books/:id` - Delete a book
 - `POST /api/books/:id/chapters` - Add new chapter
 - `PUT /api/books/:id/chapters/:idx` - Update chapter
 - `DELETE /api/books/:id/chapters/:idx` - Delete chapter
-- `POST /api/follows` - Follow/unfollow author
-- `POST /api/bookmarks` - Bookmark chapter
-- `POST /api/reading` - Record reading progress
-- `GET /api/users/:id/follows` - Get user's followed authors
-- `GET /api/users/:id/bookmarks` - Get user's bookmarks
-- `GET /api/users/:id/reading` - Get reading history
+- `POST /api/follows` - Follow/unfollow author (legacy)
+- `POST /api/bookmarks` - Bookmark chapter (legacy)
+- `POST /api/reading` - Record reading progress (legacy)
+- `GET /api/users/:id/follows` - Get user's followed authors (legacy)
+- `GET /api/users/:id/bookmarks` - Get user's bookmarks (legacy)
+- `GET /api/users/:id/reading` - Get reading history (legacy)
 
-*All protected routes require an `Authorization: Bearer <token>` header.*
+### Protected Reader Endpoints (require Authorization: Bearer <ink_reader_token>)
+- `GET /api/readers/me` - Get current reader details
+- `GET /api/interactions/bookmarks` - Get reader's bookmarks with book details
+- `POST /api/interactions/bookmarks` - Toggle bookmark for a book
+- `DELETE /api/interactions/bookmarks/:bookId` - Remove bookmark
+- `GET /api/interactions/bookmarks/:bookId` - Check if book is bookmarked
+- `GET /api/interactions/history` - Get reading history with book/chapter details
+- `POST /api/interactions/history` - Record reading progress
+- `DELETE /api/interactions/history/:bookId` - Clear history for a book
+- `GET /api/interactions/follows` - Get followed authors with details
+- `POST /api/interactions/follow/:authorId` - Toggle follow for an author
+- `DELETE /api/interactions/follow/:authorId` - Unfollow an author
+- `GET /api/interactions/follow/:authorId` - Check if following an author
+- `GET /api/interactions/ratings/:bookId` - Get ratings for a book (includes average)
+- `GET /api/interactions/ratings/:bookId/user` - Get current reader's rating for a book
+- `POST /api/interactions/ratings` - Create or update rating (1-5 stars)
+- `DELETE /api/interactions/ratings/:bookId` - Delete rating
+
+*Note: Authors and readers use separate authentication tokens stored in different localStorage keys.*
 
 ## Development Guidelines
 
