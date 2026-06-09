@@ -184,6 +184,39 @@ async function init() {
     FOREIGN KEY(reader_id) REFERENCES readers(id) ON DELETE SET NULL
   );`);
 
+  // Migrations: Add columns if they don't exist in existing databases
+  try {
+    // Check and add author_reply to reviews
+    const reviewsCheck = await pool.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name='reviews' AND column_name='author_reply'
+    `);
+
+    if (reviewsCheck.rows.length === 0) {
+      await pool.query(`ALTER TABLE reviews ADD COLUMN author_reply TEXT`);
+      await pool.query(`ALTER TABLE reviews ADD COLUMN author_reply_at TIMESTAMP WITH TIME ZONE`);
+      console.log('[DB] Added author_reply columns to reviews table');
+    }
+
+    // Check and add author_reply to comments
+    const commentsCheck = await pool.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name='comments' AND column_name='author_reply'
+    `);
+
+    if (commentsCheck.rows.length === 0) {
+      await pool.query(`ALTER TABLE comments ADD COLUMN author_reply TEXT`);
+      await pool.query(`ALTER TABLE comments ADD COLUMN author_reply_at TIMESTAMP WITH TIME ZONE`);
+      console.log('[DB] Added author_reply columns to comments table');
+    }
+
+    console.log('[DB] Migrations applied successfully');
+  } catch (err) {
+    console.error('[DB] Migration error:', err.message);
+  }
+
   // Seed demo data if no authors
   const res = await pool.query('SELECT count(1) as c FROM authors');
   if (parseInt(res.rows[0].c, 10) === 0) await seed();
