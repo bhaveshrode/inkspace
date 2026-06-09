@@ -1,15 +1,21 @@
 import { store } from '../store/index.js';
 import { router } from '../router/index.js';
+import { RatingStars } from '../components/ratingStars.js';
 
 export async function authorDashboard() {
   const works = await store.getWorks();
   const myWorks = works.filter(w => w.authorId === store.currentUser.id);
 
   let stats = { totalRatings: 0, averageRating: 0, totalViews: 0 };
+  let recentReviews = [];
+  let recentComments = [];
+
   try {
     stats = await store.getAuthorStatistics();
+    recentReviews = await store.getAuthorReviews();
+    recentComments = await store.getAuthorComments();
   } catch (e) {
-    console.error('Failed to load statistics:', e);
+    console.error('Failed to load data:', e);
   }
 
   const worksWithRatings = await Promise.all(
@@ -78,9 +84,13 @@ export async function authorDashboard() {
               </div>
             </div>
             <div class="flex gap-2">
+              <button onclick="router.navigate('book-reviews', {bookId: '${w.id}'})"
+                      class="text-purple-600 hover:text-purple-700 px-3 py-1 rounded border border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition">
+                <i class="fa-solid fa-comment-dots mr-1"></i>Reviews
+              </button>
               <button onclick="window.viewBookRatings('${w.id}')"
                       class="text-yellow-600 hover:text-yellow-700 px-3 py-1 rounded border border-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition">
-                <i class="fa-solid fa-star mr-1"></i>View Ratings
+                <i class="fa-solid fa-star mr-1"></i>Ratings
               </button>
               <button onclick="router.navigate('manage-work', {id: '${w.id}'})"
                       class="text-indigo-600 hover:text-indigo-700 px-3 py-1 rounded border border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition">
@@ -91,7 +101,117 @@ export async function authorDashboard() {
         </div>
       `).join('')}
     </div>
+
+    <!-- Recent Reviews Section -->
+    <div class="mt-8">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Recent Reviews</h2>
+      <div id="recent-reviews-container">
+        ${recentReviews.length === 0 ? `
+          <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-8 text-center text-slate-500 dark:text-slate-400">
+            <i class="fa-solid fa-comment-dots text-4xl mb-3 opacity-50"></i>
+            <p>No reviews yet</p>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+
+    <!-- Recent Comments Section -->
+    <div class="mt-8">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Recent Comments</h2>
+      <div id="recent-comments-container">
+        ${recentComments.length === 0 ? `
+          <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-8 text-center text-slate-500 dark:text-slate-400">
+            <i class="fa-solid fa-comments text-4xl mb-3 opacity-50"></i>
+            <p>No comments yet</p>
+          </div>
+        ` : ''}
+      </div>
+    </div>
   `;
+
+  // Render recent reviews
+  if (recentReviews.length > 0) {
+    const reviewsContainer = container.querySelector('#recent-reviews-container');
+    recentReviews.slice(0, 5).forEach(review => {
+      const reviewCard = document.createElement('div');
+      reviewCard.className = 'bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-4';
+
+      const reviewDate = new Date(review.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+
+      reviewCard.innerHTML = `
+        <div class="flex items-start gap-4">
+          ${review.book_cover
+            ? `<img src="${review.book_cover}" alt="${review.book_title}" class="w-16 h-16 rounded object-cover">`
+            : `<div class="w-16 h-16 rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center"><i class="fa-solid fa-book text-slate-400"></i></div>`
+          }
+          <div class="flex-1">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <h4 class="font-bold text-slate-900 dark:text-white">${review.book_title}</h4>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Review by ${review.reader_name}</p>
+              </div>
+              <button onclick="router.navigate('book-reviews', {bookId: '${review.book_id}'})" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                View All
+              </button>
+            </div>
+            <div id="review-stars-${review.id}" class="mb-2"></div>
+            <h5 class="font-semibold text-slate-900 dark:text-white mb-1">${review.title}</h5>
+            <p class="text-slate-700 dark:text-slate-300 text-sm line-clamp-2">${review.review_text}</p>
+            <div class="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-400">
+              <span><i class="fa-solid fa-thumbs-up mr-1"></i>${review.helpful_count || 0} helpful</span>
+              <span>${reviewDate}</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const starsContainer = reviewCard.querySelector(`#review-stars-${review.id}`);
+      const stars = RatingStars({ rating: review.rating, size: 'text-sm' });
+      starsContainer.appendChild(stars);
+
+      reviewsContainer.appendChild(reviewCard);
+    });
+  }
+
+  // Render recent comments
+  if (recentComments.length > 0) {
+    const commentsContainer = container.querySelector('#recent-comments-container');
+    recentComments.slice(0, 5).forEach(comment => {
+      const commentCard = document.createElement('div');
+      commentCard.className = 'bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-4';
+
+      const commentDate = new Date(comment.date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+
+      commentCard.innerHTML = `
+        <div class="flex items-start gap-4">
+          ${comment.book_cover
+            ? `<img src="${comment.book_cover}" alt="${comment.book_title}" class="w-16 h-16 rounded object-cover">`
+            : `<div class="w-16 h-16 rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center"><i class="fa-solid fa-book text-slate-400"></i></div>`
+          }
+          <div class="flex-1">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <h4 class="font-bold text-slate-900 dark:text-white">${comment.book_title}</h4>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Comment by ${comment.user}</p>
+              </div>
+            </div>
+            <p class="text-slate-700 dark:text-slate-300 text-sm">${comment.text}</p>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">${commentDate}</div>
+          </div>
+        </div>
+      `;
+
+      commentsContainer.appendChild(commentCard);
+    });
+  }
 
   return container;
 }

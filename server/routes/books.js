@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import { authenticate, JWT_SECRET } from '../middleware/auth.js';
 import * as booksModel from '../db/models/books.js';
 import * as ratingsModel from '../db/models/ratings.js';
+import * as reviewsModel from '../db/models/reviews.js';
+import * as commentsModel from '../db/models/comments.js';
 
 const router = express.Router();
 
@@ -135,6 +137,44 @@ router.get('/:id/ratings/detailed', authenticate, async (req, res) => {
     const detailed = await ratingsModel.getRatingsWithReaderDetails(req.params.id);
 
     res.json({ breakdown, detailed });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get detailed reviews for a book (protected - author only)
+router.get('/:id/reviews/detailed', authenticate, async (req, res) => {
+  try {
+    const book = await booksModel.getBookById(req.params.id);
+    if (!book) return res.status(404).json({ error: 'Book not found' });
+    if (book.author_id !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const reviews = await reviewsModel.getReviewsByBookId(req.params.id);
+    const stats = await reviewsModel.getReviewStatsByBookId(req.params.id);
+
+    res.json({ reviews, stats });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get comments for a book (author-specific - protected)
+router.get('/:id/comments/detailed', authenticate, async (req, res) => {
+  try {
+    const book = await booksModel.getBookById(req.params.id);
+    if (!book) return res.status(404).json({ error: 'Book not found' });
+    if (book.author_id !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const comments = await commentsModel.getCommentsByBookId(req.params.id);
+    const count = await commentsModel.getCommentCountByBookId(req.params.id);
+
+    res.json({ comments, count });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

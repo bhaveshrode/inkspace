@@ -145,6 +145,21 @@ async function init() {
     UNIQUE(reader_id, book_id)
   );`);
 
+  await pool.query(`CREATE TABLE IF NOT EXISTS reviews (
+    id TEXT PRIMARY KEY,
+    book_id TEXT NOT NULL,
+    reader_id TEXT NOT NULL,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    title TEXT NOT NULL,
+    review_text TEXT NOT NULL,
+    helpful_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE,
+    FOREIGN KEY(reader_id) REFERENCES readers(id) ON DELETE CASCADE,
+    UNIQUE(reader_id, book_id)
+  );`);
+
   await pool.query(`CREATE TABLE IF NOT EXISTS comments (
     id TEXT PRIMARY KEY,
     book_id TEXT NOT NULL,

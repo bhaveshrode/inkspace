@@ -121,6 +121,13 @@ export const router = {
           }
           view = await views.bookRatings(this.params.id);
           break;
+        case 'book-reviews':
+          if (!store.currentUser) {
+            this.navigate('author-login');
+            return;
+          }
+          view = await views.bookReviews(this.params.bookId);
+          break;
         default:
           view = await views.home();
       }

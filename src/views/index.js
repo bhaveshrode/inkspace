@@ -13,3 +13,4 @@ export { readerLogin } from './readerLogin.js';
 export { readerSignup } from './readerSignup.js';
 export { readerDashboard } from './readerDashboard.js';
 export { bookRatings } from './bookRatings.js';
+export { bookReviews } from './bookReviews.js';

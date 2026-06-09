@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import { authenticate, JWT_SECRET } from '../middleware/auth.js';
 import * as authorsModel from '../db/models/authors.js';
 import * as ratingsModel from '../db/models/ratings.js';
+import * as reviewsModel from '../db/models/reviews.js';
+import * as commentsModel from '../db/models/comments.js';
 
 const router = express.Router();
 
@@ -70,6 +72,28 @@ router.get('/statistics/me', authenticate, async (req, res) => {
   try {
     const stats = await ratingsModel.getAuthorStatistics(req.user.id);
     res.json(stats);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get recent reviews for author's books (protected)
+router.get('/reviews/me', authenticate, async (req, res) => {
+  try {
+    const reviews = await reviewsModel.getReviewsForAuthorBooks(req.user.id);
+    res.json(reviews);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get recent comments for author's books (protected)
+router.get('/comments/me', authenticate, async (req, res) => {
+  try {
+    const comments = await commentsModel.getCommentsForAuthorBooks(req.user.id);
+    res.json(comments);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

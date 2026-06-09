@@ -267,5 +267,78 @@ export const store = {
 
   async getAuthorStatistics() {
     return this.apiFetch('/api/authors/statistics/me');
+  },
+
+  // Reviews API
+  async getReviews(bookId) {
+    return this.readerApiFetch(`/api/interactions/reviews/${bookId}`);
+  },
+
+  async getUserReview(bookId) {
+    try {
+      return await this.readerApiFetch(`/api/interactions/reviews/${bookId}/user`);
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async submitReview(bookId, { rating, title, reviewText }) {
+    return this.readerApiFetch('/api/interactions/reviews', {
+      method: 'POST',
+      body: JSON.stringify({ bookId, rating, title, reviewText })
+    });
+  },
+
+  async deleteReview(bookId) {
+    return this.readerApiFetch(`/api/interactions/reviews/${bookId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async markReviewHelpful(reviewId) {
+    return this.readerApiFetch(`/api/interactions/reviews/${reviewId}/helpful`, {
+      method: 'POST'
+    });
+  },
+
+  async getReviewStats(bookId) {
+    const res = await fetch(`/api/interactions/reviews/${bookId}/stats`);
+    return res.json();
+  },
+
+  async getBookDetailedReviews(bookId) {
+    return this.apiFetch(`/api/books/${bookId}/reviews/detailed`);
+  },
+
+  // Comments API (enhanced)
+  async getCommentsForBook(bookId) {
+    const res = await fetch(`/api/interactions/comments/${bookId}`);
+    return res.json();
+  },
+
+  async addCommentAsReader(bookId, text) {
+    return this.readerApiFetch('/api/interactions/comments', {
+      method: 'POST',
+      body: JSON.stringify({ bookId, text })
+    });
+  },
+
+  async deleteComment(commentId) {
+    return this.readerApiFetch(`/api/interactions/comments/${commentId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async getBookDetailedComments(bookId) {
+    return this.apiFetch(`/api/books/${bookId}/comments/detailed`);
+  },
+
+  // Author reviews and comments
+  async getAuthorReviews() {
+    return this.apiFetch('/api/authors/reviews/me');
+  },
+
+  async getAuthorComments() {
+    return this.apiFetch('/api/authors/comments/me');
   }
 };

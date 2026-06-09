@@ -3,6 +3,8 @@ import { router } from '../router/index.js';
 import { notFound } from '../components/notFound.js';
 import { RatingStars } from '../components/ratingStars.js';
 import { showToast } from '../components/toast.js';
+import { ReviewCard } from '../components/reviewCard.js';
+import { ReviewForm } from '../components/reviewForm.js';
 
 export async function workDetail(id) {
   const work = await store.getWorkById(id);
@@ -63,20 +65,48 @@ export async function workDetail(id) {
 
           <p class="text-slate-700 dark:text-slate-300 leading-relaxed mb-8">${work.description}</p>
 
-          <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Chapters</h2>
-          <div class="space-y-2">
-            ${work.chapters.map((ch, idx) => `
-              <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition"
-                   onclick="router.navigate('read', {id: '${work.id}', chapterIndex: ${idx}})">
-                <div class="flex justify-between items-center">
-                  <div>
-                    <span class="text-sm text-slate-500 dark:text-slate-400">Chapter ${idx + 1}</span>
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">${ch.title}</h3>
+          <!-- Tabs Navigation -->
+          <div class="border-b border-slate-200 dark:border-slate-700 mb-6">
+            <div class="flex gap-6">
+              <button id="tab-chapters" class="tab-button active pb-3 px-1 text-sm font-medium border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400">
+                Chapters (${work.chapters.length})
+              </button>
+              <button id="tab-reviews" class="tab-button pb-3 px-1 text-sm font-medium border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">
+                Reviews
+              </button>
+              <button id="tab-comments" class="tab-button pb-3 px-1 text-sm font-medium border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">
+                Comments
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab Content -->
+          <div id="tab-content-chapters" class="tab-content">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Chapters</h2>
+            <div class="space-y-2">
+              ${work.chapters.map((ch, idx) => `
+                <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                     onclick="router.navigate('read', {id: '${work.id}', chapterIndex: ${idx}})">
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <span class="text-sm text-slate-500 dark:text-slate-400">Chapter ${idx + 1}</span>
+                      <h3 class="text-lg font-semibold text-slate-900 dark:text-white">${ch.title}</h3>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-400"></i>
                   </div>
-                  <i class="fa-solid fa-chevron-right text-slate-400"></i>
                 </div>
-              </div>
-            `).join('')}
+              `).join('')}
+            </div>
+          </div>
+
+          <div id="tab-content-reviews" class="tab-content hidden">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Reviews</h2>
+            <div id="reviews-container">Loading reviews...</div>
+          </div>
+
+          <div id="tab-content-comments" class="tab-content hidden">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Comments</h2>
+            <div id="comments-container">Loading comments...</div>
           </div>
         </div>
       </div>
@@ -180,6 +210,295 @@ export async function workDetail(id) {
         router.navigate('reader-login');
       });
     });
+  }
+
+  // Tab switching logic
+  const tabs = container.querySelectorAll('.tab-button');
+  const tabContents = container.querySelectorAll('.tab-content');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabName = tab.id.replace('tab-', '');
+
+      // Update active states
+      tabs.forEach(t => {
+        t.classList.remove('active', 'border-indigo-600', 'text-indigo-600', 'dark:text-indigo-400');
+        t.classList.add('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+      });
+      tab.classList.add('active', 'border-indigo-600', 'text-indigo-600', 'dark:text-indigo-400');
+      tab.classList.remove('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+
+      // Show/hide content
+      tabContents.forEach(content => content.classList.add('hidden'));
+      container.querySelector(`#tab-content-${tabName}`).classList.remove('hidden');
+
+      // Load data if needed
+      if (tabName === 'reviews') {
+        loadReviews();
+      } else if (tabName === 'comments') {
+        loadComments();
+      }
+    });
+  });
+
+  // Load reviews
+  let reviewsLoaded = false;
+  async function loadReviews() {
+    if (reviewsLoaded) return;
+    reviewsLoaded = true;
+
+    const reviewsContainer = container.querySelector('#reviews-container');
+    reviewsContainer.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-slate-400"></i></div>';
+
+    try {
+      const reviews = await store.getReviews(id);
+      let userReview = null;
+
+      if (store.currentReader) {
+        userReview = await store.getUserReview(id);
+      }
+
+      reviewsContainer.innerHTML = '';
+
+      // Show review form for logged-in readers
+      if (store.currentReader) {
+        const formContainer = document.createElement('div');
+        formContainer.className = 'mb-6';
+
+        if (userReview && userReview.id) {
+          // User has already reviewed - show edit option
+          formContainer.innerHTML = `
+            <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-4">
+              <p class="text-sm text-indigo-900 dark:text-indigo-100">
+                You've already reviewed this book.
+                <button id="edit-review-btn" class="text-indigo-600 dark:text-indigo-400 underline hover:no-underline">Edit your review</button>
+              </p>
+            </div>
+          `;
+          reviewsContainer.appendChild(formContainer);
+
+          const editBtn = formContainer.querySelector('#edit-review-btn');
+          editBtn.addEventListener('click', () => {
+            showReviewForm(userReview);
+          });
+        } else {
+          // Show review form
+          showReviewForm();
+        }
+      } else {
+        const loginPrompt = document.createElement('div');
+        loginPrompt.className = 'bg-slate-50 dark:bg-slate-700 rounded-lg p-4 mb-6 text-center';
+        loginPrompt.innerHTML = `
+          <p class="text-slate-600 dark:text-slate-400">
+            <a href="#" id="login-to-review" class="text-indigo-600 dark:text-indigo-400 hover:underline">Login</a> to write a review
+          </p>
+        `;
+        reviewsContainer.appendChild(loginPrompt);
+
+        loginPrompt.querySelector('#login-to-review').addEventListener('click', (e) => {
+          e.preventDefault();
+          router.navigate('reader-login');
+        });
+      }
+
+      // Display reviews
+      if (reviews.length === 0) {
+        const noReviews = document.createElement('div');
+        noReviews.className = 'text-center py-8 text-slate-500 dark:text-slate-400';
+        noReviews.innerHTML = '<p>No reviews yet. Be the first to review!</p>';
+        reviewsContainer.appendChild(noReviews);
+      } else {
+        reviews.forEach(review => {
+          const reviewCard = ReviewCard({
+            review,
+            currentReaderId: store.currentReader?.id,
+            onDelete: async (reviewId) => {
+              try {
+                await store.deleteReview(id);
+                showToast('Review deleted');
+                reviewsLoaded = false;
+                loadReviews();
+              } catch (err) {
+                showToast(err.message, 'error');
+              }
+            },
+            onEdit: (review) => {
+              showReviewForm(review);
+            },
+            onHelpful: async (reviewId) => {
+              try {
+                await store.markReviewHelpful(reviewId);
+                showToast('Marked as helpful');
+                reviewsLoaded = false;
+                loadReviews();
+              } catch (err) {
+                showToast(err.message, 'error');
+              }
+            }
+          });
+          reviewsContainer.appendChild(reviewCard);
+        });
+      }
+    } catch (err) {
+      reviewsContainer.innerHTML = `<p class="text-red-500">Error loading reviews: ${err.message}</p>`;
+    }
+  }
+
+  function showReviewForm(existingReview = null) {
+    const reviewsContainer = container.querySelector('#reviews-container');
+    reviewsContainer.innerHTML = '';
+
+    const form = ReviewForm({
+      existingReview,
+      onSubmit: async (data) => {
+        await store.submitReview(id, data);
+        reviewsLoaded = false;
+        loadReviews();
+      },
+      onCancel: () => {
+        reviewsLoaded = false;
+        loadReviews();
+      }
+    });
+    reviewsContainer.appendChild(form);
+  }
+
+  // Load comments
+  let commentsLoaded = false;
+  async function loadComments() {
+    if (commentsLoaded) return;
+    commentsLoaded = true;
+
+    const commentsContainer = container.querySelector('#comments-container');
+    commentsContainer.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-slate-400"></i></div>';
+
+    try {
+      const comments = await store.getCommentsForBook(id);
+
+      commentsContainer.innerHTML = '';
+
+      // Comment form for logged-in readers
+      if (store.currentReader) {
+        const formContainer = document.createElement('div');
+        formContainer.className = 'mb-6 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4';
+        formContainer.innerHTML = `
+          <h3 class="font-semibold text-slate-900 dark:text-white mb-3">Add a Comment</h3>
+          <form id="comment-form">
+            <textarea
+              id="comment-text"
+              rows="3"
+              placeholder="Share your thoughts..."
+              class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none mb-3"
+            ></textarea>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium"
+            >
+              Post Comment
+            </button>
+          </form>
+        `;
+        commentsContainer.appendChild(formContainer);
+
+        const commentForm = formContainer.querySelector('#comment-form');
+        commentForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const text = formContainer.querySelector('#comment-text').value.trim();
+          if (!text) return;
+
+          try {
+            await store.addCommentAsReader(id, text);
+            showToast('Comment added!');
+            commentsLoaded = false;
+            loadComments();
+          } catch (err) {
+            showToast(err.message, 'error');
+          }
+        });
+      } else {
+        const loginPrompt = document.createElement('div');
+        loginPrompt.className = 'bg-slate-50 dark:bg-slate-700 rounded-lg p-4 mb-6 text-center';
+        loginPrompt.innerHTML = `
+          <p class="text-slate-600 dark:text-slate-400">
+            <a href="#" id="login-to-comment" class="text-indigo-600 dark:text-indigo-400 hover:underline">Login</a> to comment
+          </p>
+        `;
+        commentsContainer.appendChild(loginPrompt);
+
+        loginPrompt.querySelector('#login-to-comment').addEventListener('click', (e) => {
+          e.preventDefault();
+          router.navigate('reader-login');
+        });
+      }
+
+      // Display comments
+      if (comments.length === 0) {
+        const noComments = document.createElement('div');
+        noComments.className = 'text-center py-8 text-slate-500 dark:text-slate-400';
+        noComments.innerHTML = '<p>No comments yet. Be the first to comment!</p>';
+        commentsContainer.appendChild(noComments);
+      } else {
+        const commentsListContainer = document.createElement('div');
+        commentsListContainer.className = 'space-y-4';
+
+        comments.forEach(comment => {
+          const commentCard = document.createElement('div');
+          commentCard.className = 'bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4';
+
+          const isOwner = store.currentReader && comment.reader_id === store.currentReader.id;
+          const commentDate = new Date(comment.date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          });
+
+          commentCard.innerHTML = `
+            <div class="flex items-start gap-3">
+              ${comment.avatar
+                ? `<img src="${comment.avatar}" alt="${comment.user}" class="w-8 h-8 rounded-full object-cover">`
+                : `<div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-sm font-bold text-slate-600 dark:text-slate-300">${comment.user.charAt(0)}</div>`
+              }
+              <div class="flex-1">
+                <div class="flex items-center justify-between mb-1">
+                  <div>
+                    <span class="font-semibold text-slate-900 dark:text-white">${comment.user}</span>
+                    <span class="text-sm text-slate-500 dark:text-slate-400 ml-2">${commentDate}</span>
+                  </div>
+                  ${isOwner ? `
+                    <button id="delete-comment-${comment.id}" class="text-sm text-red-600 hover:text-red-700 dark:text-red-400">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  ` : ''}
+                </div>
+                <p class="text-slate-700 dark:text-slate-300">${comment.text}</p>
+              </div>
+            </div>
+          `;
+
+          if (isOwner) {
+            const deleteBtn = commentCard.querySelector(`#delete-comment-${comment.id}`);
+            deleteBtn.addEventListener('click', async () => {
+              if (confirm('Delete this comment?')) {
+                try {
+                  await store.deleteComment(comment.id);
+                  showToast('Comment deleted');
+                  commentsLoaded = false;
+                  loadComments();
+                } catch (err) {
+                  showToast(err.message, 'error');
+                }
+              }
+            });
+          }
+
+          commentsListContainer.appendChild(commentCard);
+        });
+
+        commentsContainer.appendChild(commentsListContainer);
+      }
+    } catch (err) {
+      commentsContainer.innerHTML = `<p class="text-red-500">Error loading comments: ${err.message}</p>`;
+    }
   }
 
   return container;
