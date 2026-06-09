@@ -47,7 +47,7 @@ export async function read(id, chapterIndex) {
           ? `<button onclick="router.navigate('read', {id: '${id}', chapterIndex: ${nextChapter}})" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
                Next Chapter<i class="fa-solid fa-chevron-right ml-2"></i>
              </button>`
-          : '<button onclick="router.navigate('work-detail', {id: '${id}'})" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Finished<i class="fa-solid fa-check ml-2"></i></button>'
+          : `<button onclick="router.navigate('work-detail', {id: '${id}'})" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Finished<i class="fa-solid fa-check ml-2"></i></button>`
         }
       </div>
     </div>
