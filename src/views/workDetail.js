@@ -115,13 +115,11 @@ export async function workDetail(id) {
     const avgStars = RatingStars({ rating: Math.round(ratingData.average), size: 'text-lg' });
     averageRatingDisplay.innerHTML = `
       <div class="flex items-center gap-2">
-        <div>${avgStars.outerHTML}</div>
+        <div id="avg-stars-container"></div>
         <span class="text-sm text-slate-600 dark:text-slate-400">${ratingData.average.toFixed(1)} (${ratingData.count} ratings)</span>
       </div>
     `;
-    averageRatingDisplay.appendChild(avgStars);
-    averageRatingDisplay.querySelector('div').removeChild(avgStars);
-    avgStars.remove();
+    averageRatingDisplay.querySelector('#avg-stars-container').appendChild(avgStars);
   }
 
   if (store.currentReader) {

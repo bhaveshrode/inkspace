@@ -40,18 +40,6 @@ export async function readerLogin() {
             <a href="#" id="signup-link" class="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">Sign up</a>
           </p>
         </div>
-
-        <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-          <p class="text-xs text-slate-500 dark:text-slate-400 text-center mb-3">Demo accounts:</p>
-          <div class="flex gap-2">
-            <button id="demo1" class="flex-1 text-xs px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 transition">
-              reader1@inkspace.com
-            </button>
-            <button id="demo2" class="flex-1 text-xs px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 transition">
-              reader2@inkspace.com
-            </button>
-          </div>
-        </div>
       </div>
 
       <div class="mt-6 text-center">
@@ -86,16 +74,6 @@ export async function readerLogin() {
   container.querySelector('#author-link').addEventListener('click', (e) => {
     e.preventDefault();
     router.navigate('author-login');
-  });
-
-  container.querySelector('#demo1').addEventListener('click', () => {
-    container.querySelector('#email').value = 'reader1@inkspace.com';
-    container.querySelector('#password').value = 'password';
-  });
-
-  container.querySelector('#demo2').addEventListener('click', () => {
-    container.querySelector('#email').value = 'reader2@inkspace.com';
-    container.querySelector('#password').value = 'password';
   });
 
   return container;

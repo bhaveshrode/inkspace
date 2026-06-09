@@ -26,7 +26,6 @@ export async function authorLogin() {
           Login
         </button>
       </form>
-      <p class="text-sm text-slate-500 mt-4">Demo: elena@inkspace.com / password</p>
     </div>
   `;
 
