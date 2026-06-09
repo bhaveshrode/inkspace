@@ -11,12 +11,22 @@ const router = express.Router();
 router.post('/bookmarks', authenticateReader, async (req, res) => {
   try {
     const { bookId, chapterIndex } = req.body;
+
+    console.log('[POST /bookmarks] Request:', {
+      bookId,
+      chapterIndex,
+      readerId: req.reader?.id
+    });
+
     if (!bookId) return res.status(400).json({ error: 'Missing bookId' });
+
     const result = await interactionsModel.toggleBookmark(req.reader.id, bookId, chapterIndex);
+    console.log('[POST /bookmarks] Success:', result);
     res.json({ bookmarked: result });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[POST /bookmarks] Error:', err.message);
+    console.error('[POST /bookmarks] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 
@@ -34,12 +44,22 @@ router.get('/bookmarks', authenticateReader, async (req, res) => {
 router.post('/history', authenticateReader, async (req, res) => {
   try {
     const { bookId, chapterIndex } = req.body;
+
+    console.log('[POST /history] Request:', {
+      bookId,
+      chapterIndex,
+      readerId: req.reader?.id
+    });
+
     if (!bookId) return res.status(400).json({ error: 'Missing bookId' });
+
     await interactionsModel.addReading(req.reader.id, bookId, chapterIndex);
+    console.log('[POST /history] Success');
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[POST /history] Error:', err.message);
+    console.error('[POST /history] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 
@@ -57,12 +77,21 @@ router.get('/history', authenticateReader, async (req, res) => {
 router.post('/follow/:authorId', authenticateReader, async (req, res) => {
   try {
     const { authorId } = req.params;
+
+    console.log('[POST /follow] Request:', {
+      authorId,
+      readerId: req.reader?.id
+    });
+
     if (!authorId) return res.status(400).json({ error: 'Missing authorId' });
+
     const result = await interactionsModel.toggleFollow(req.reader.id, authorId);
+    console.log('[POST /follow] Success:', result);
     res.json({ following: result });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[POST /follow] Error:', err.message);
+    console.error('[POST /follow] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 
@@ -110,13 +139,23 @@ router.get('/has-bookmark/:bookId', authenticateReader, async (req, res) => {
 router.post('/ratings', authenticateReader, async (req, res) => {
   try {
     const { bookId, rating } = req.body;
+
+    console.log('[POST /ratings] Request:', {
+      bookId,
+      rating,
+      readerId: req.reader?.id
+    });
+
     if (!bookId || !rating) return res.status(400).json({ error: 'Missing fields' });
     if (rating < 1 || rating > 5) return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+
     const result = await ratingsModel.createOrUpdateRating(req.reader.id, bookId, rating);
+    console.log('[POST /ratings] Success');
     res.json(result);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[POST /ratings] Error:', err.message);
+    console.error('[POST /ratings] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 
@@ -164,6 +203,15 @@ router.get('/reviews/:bookId/user', authenticateReader, async (req, res) => {
 router.post('/reviews', authenticateReader, async (req, res) => {
   try {
     const { bookId, rating, title, reviewText } = req.body;
+
+    console.log('[POST /reviews] Request:', {
+      bookId,
+      rating,
+      titleLength: title?.length,
+      reviewTextLength: reviewText?.length,
+      readerId: req.reader?.id
+    });
+
     if (!bookId || !rating || !title || !reviewText) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -181,15 +229,19 @@ router.post('/reviews', authenticateReader, async (req, res) => {
     const existing = await reviewsModel.getReviewByReaderAndBook(req.reader.id, bookId);
     let review;
     if (existing) {
+      console.log('[POST /reviews] Updating existing review:', existing.id);
       review = await reviewsModel.updateReview(req.reader.id, bookId, { rating, title, reviewText });
     } else {
+      console.log('[POST /reviews] Creating new review');
       review = await reviewsModel.createReview(req.reader.id, bookId, { rating, title, reviewText });
     }
 
+    console.log('[POST /reviews] Success:', review.id);
     res.json(review);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[POST /reviews] Error:', err.message);
+    console.error('[POST /reviews] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 
@@ -205,14 +257,23 @@ router.delete('/reviews/:bookId', authenticateReader, async (req, res) => {
 
 router.post('/reviews/:reviewId/helpful', authenticateReader, async (req, res) => {
   try {
+    console.log('[POST /reviews/:reviewId/helpful] Request:', {
+      reviewId: req.params.reviewId,
+      readerId: req.reader?.id
+    });
+
     const result = await reviewsModel.incrementHelpfulCount(req.params.reviewId, req.reader.id);
     if (!result.success) {
+      console.log('[POST /reviews/:reviewId/helpful] Already voted');
       return res.status(409).json({ error: result.message, alreadyVoted: true });
     }
+
+    console.log('[POST /reviews/:reviewId/helpful] Success');
     res.json({ helpful_count: result.helpful_count, success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[POST /reviews/:reviewId/helpful] Error:', err.message);
+    console.error('[POST /reviews/:reviewId/helpful] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 
@@ -250,30 +311,53 @@ router.get('/comments/:bookId', async (req, res) => {
 router.post('/comments', authenticateReader, async (req, res) => {
   try {
     const { bookId, text } = req.body;
+
+    console.log('[POST /comments] Request:', {
+      bookId,
+      textLength: text?.length,
+      readerId: req.reader?.id,
+      hasReader: !!req.reader
+    });
+
     if (!bookId || !text) {
+      console.log('[POST /comments] Validation failed:', { bookId: !!bookId, text: !!text });
       return res.status(400).json({ error: 'Missing required fields' });
     }
+
     const comment = await commentsModel.addComment(bookId, {
       readerId: req.reader.id,
       text
     });
+
+    console.log('[POST /comments] Success:', comment.id);
     res.json(comment);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[POST /comments] Error:', err.message);
+    console.error('[POST /comments] Stack:', err.stack);
+    console.error('[POST /comments] Full error:', err);
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 
 router.delete('/comments/:commentId', authenticateReader, async (req, res) => {
   try {
+    console.log('[DELETE /comments/:commentId] Request:', {
+      commentId: req.params.commentId,
+      readerId: req.reader?.id
+    });
+
     const result = await commentsModel.deleteComment(req.params.commentId, req.reader.id);
     if (!result) {
+      console.log('[DELETE /comments/:commentId] Forbidden - not owner');
       return res.status(403).json({ error: 'Cannot delete this comment' });
     }
+
+    console.log('[DELETE /comments/:commentId] Success');
     res.json({ deleted: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[DELETE /comments/:commentId] Error:', err.message);
+    console.error('[DELETE /comments/:commentId] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 
