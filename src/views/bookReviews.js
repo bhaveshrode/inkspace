@@ -2,6 +2,7 @@ import { store } from '../store/index.js';
 import { router } from '../router/index.js';
 import { notFound } from '../components/notFound.js';
 import { RatingStars } from '../components/ratingStars.js';
+import { ReplyThread } from '../components/replyThread.js';
 
 export async function bookReviews(bookId) {
   if (!store.currentUser) {
@@ -178,6 +179,9 @@ export async function bookReviews(bookId) {
               ${review.helpful_count || 0} found helpful
             </span>
           </div>
+
+          <!-- Reply Thread Container -->
+          <div id="reply-thread-${review.id}"></div>
         `;
 
         // Add stars
@@ -185,8 +189,47 @@ export async function bookReviews(bookId) {
         const stars = RatingStars({ rating: review.rating, size: 'text-base' });
         starsContainer.appendChild(stars);
 
+        // Load reply thread for this review
+        loadReplyThread(reviewCard, review.id, bookId);
+
         reviewsList.appendChild(reviewCard);
       });
+    }
+
+    // Function to load reply thread for a review
+    async function loadReplyThread(reviewCard, reviewId, bookId) {
+      const replyThreadContainer = reviewCard.querySelector(`#reply-thread-${reviewId}`);
+      if (!replyThreadContainer) return;
+
+      try {
+        const replies = await store.getReviewReplies(reviewId);
+
+        console.log('[BookReviews] Loading reply thread for review:', reviewId, 'with', replies.length, 'replies');
+
+        const replyThread = ReplyThread({
+          replies,
+          currentUserId: store.currentUser?.id,
+          currentUserType: 'author',
+          parentType: 'review',
+          parentId: reviewId,
+          onReply: async (text) => {
+            await store.addReviewReply(reviewId, text, bookId);
+            // Reload reply thread
+            await loadReplyThread(reviewCard, reviewId, bookId);
+          },
+          onDelete: async (replyId) => {
+            await store.deleteReviewReply(reviewId, replyId, bookId);
+            // Reload reply thread
+            await loadReplyThread(reviewCard, reviewId, bookId);
+          }
+        });
+
+        replyThreadContainer.innerHTML = '';
+        replyThreadContainer.appendChild(replyThread);
+      } catch (err) {
+        console.error('Error loading reply thread:', err);
+        replyThreadContainer.innerHTML = '<p class="text-sm text-red-600 dark:text-red-400 mt-3">Failed to load replies</p>';
+      }
     }
 
     renderReviews();

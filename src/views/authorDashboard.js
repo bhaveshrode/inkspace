@@ -1,6 +1,7 @@
 import { store } from '../store/index.js';
 import { router } from '../router/index.js';
 import { RatingStars } from '../components/ratingStars.js';
+import { ReplyThread } from '../components/replyThread.js';
 
 export async function authorDashboard() {
   const works = await store.getWorks();
@@ -205,12 +206,54 @@ export async function authorDashboard() {
             </div>
             <p class="text-slate-700 dark:text-slate-300 text-sm">${comment.text}</p>
             <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">${commentDate}</div>
+
+            <!-- Reply Thread Container -->
+            <div id="comment-reply-thread-${comment.id}" class="mt-3"></div>
           </div>
         </div>
       `;
 
+      // Load reply thread for this comment
+      loadCommentReplyThread(commentCard, comment.id, comment.book_id);
+
       commentsContainer.appendChild(commentCard);
     });
+
+    // Function to load comment reply thread
+    async function loadCommentReplyThread(commentCard, commentId, bookId) {
+      const replyThreadContainer = commentCard.querySelector(`#comment-reply-thread-${commentId}`);
+      if (!replyThreadContainer) return;
+
+      try {
+        const replies = await store.getCommentReplies(commentId);
+
+        console.log('[AuthorDashboard] Loading comment reply thread for comment:', commentId, 'with', replies.length, 'replies');
+
+        const replyThread = ReplyThread({
+          replies,
+          currentUserId: store.currentUser?.id,
+          currentUserType: 'author',
+          parentType: 'comment',
+          parentId: commentId,
+          onReply: async (text) => {
+            await store.addCommentReply(commentId, text, bookId);
+            // Reload reply thread
+            await loadCommentReplyThread(commentCard, commentId, bookId);
+          },
+          onDelete: async (replyId) => {
+            await store.deleteCommentReply(commentId, replyId, bookId);
+            // Reload reply thread
+            await loadCommentReplyThread(commentCard, commentId, bookId);
+          }
+        });
+
+        replyThreadContainer.innerHTML = '';
+        replyThreadContainer.appendChild(replyThread);
+      } catch (err) {
+        console.error('Error loading comment reply thread:', err);
+        replyThreadContainer.innerHTML = '<p class="text-sm text-red-600 dark:text-red-400 mt-3">Failed to load replies</p>';
+      }
+    }
   }
 
   return container;

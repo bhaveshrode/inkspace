@@ -10,6 +10,14 @@ export function ReplyThread({
   parentType = 'review', // 'review' or 'comment'
   parentId = null
 }) {
+  console.log('[ReplyThread] Creating reply thread:', {
+    repliesCount: replies.length,
+    currentUserId,
+    currentUserType,
+    parentType,
+    parentId
+  });
+
   const container = document.createElement('div');
   container.className = 'mt-4 border-t border-slate-200 dark:border-slate-700 pt-4';
 
@@ -41,6 +49,7 @@ export function ReplyThread({
 
   // Add reply form for authenticated users
   if (currentUserId && currentUserType) {
+    console.log('[ReplyThread] Adding reply button for authenticated user');
     const replyFormSection = document.createElement('div');
     replyFormSection.id = `reply-form-section-${parentId}`;
     replyFormSection.className = 'mt-3';
@@ -57,6 +66,8 @@ export function ReplyThread({
 
     replyFormSection.appendChild(replyButton);
     container.appendChild(replyFormSection);
+  } else {
+    console.log('[ReplyThread] NOT adding reply button - currentUserId:', currentUserId, 'currentUserType:', currentUserType);
   }
 
   return container;

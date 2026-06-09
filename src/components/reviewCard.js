@@ -113,10 +113,15 @@ async function loadReplyThread(card, reviewId, bookId, authorName) {
     if (store.currentUser) {
       currentUserId = store.currentUser.id;
       currentUserType = 'author';
+      console.log('[ReviewCard] Logged in as author:', currentUserId);
     } else if (store.currentReader) {
       currentUserId = store.currentReader.id;
       currentUserType = 'reader';
+      console.log('[ReviewCard] Logged in as reader:', currentUserId);
+    } else {
+      console.log('[ReviewCard] No user logged in');
     }
+    console.log('[ReviewCard] Loading reply thread for review:', reviewId, 'with', replies.length, 'replies');
 
     // Create reply thread
     const replyThread = ReplyThread({
