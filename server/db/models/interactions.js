@@ -19,7 +19,14 @@ export async function toggleFollow(followerId, authorId) {
 // Bookmarks (toggle)
 export async function toggleBookmark(userId, bookId, chapterIndex = null) {
   const pool = getPool();
-  const existsRes = await pool.query('SELECT id FROM bookmarks WHERE user_id = $1 AND book_id = $2 AND ((chapter_index IS NULL AND $3 IS NULL) OR chapter_index = $3)', [userId, bookId, chapterIndex]);
+  // Split into two queries to avoid parameter type ambiguity
+  let existsRes;
+  if (chapterIndex === null) {
+    existsRes = await pool.query('SELECT id FROM bookmarks WHERE user_id = $1 AND book_id = $2 AND chapter_index IS NULL', [userId, bookId]);
+  } else {
+    existsRes = await pool.query('SELECT id FROM bookmarks WHERE user_id = $1 AND book_id = $2 AND chapter_index = $3', [userId, bookId, chapterIndex]);
+  }
+
   if (existsRes.rows.length > 0) {
     await pool.query('DELETE FROM bookmarks WHERE id = $1', [existsRes.rows[0].id]);
     return false;
