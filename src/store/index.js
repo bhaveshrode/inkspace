@@ -397,5 +397,91 @@ export const store = {
     return this.apiFetch(`/api/books/${bookId}/comments/${commentId}/reply`, {
       method: 'DELETE'
     });
+  },
+
+  // Review Replies (Threaded Conversations)
+  async getReviewReplies(reviewId) {
+    const res = await fetch(`/api/interactions/reviews/${reviewId}/replies`);
+    if (!res.ok) throw new Error('Failed to fetch review replies');
+    return res.json();
+  },
+
+  async addReviewReply(reviewId, text, bookId = null) {
+    // Auto-detect if author or reader
+    if (this.currentUser && bookId) {
+      // Author reply
+      return this.apiFetch(`/api/books/${bookId}/reviews/${reviewId}/replies`, {
+        method: 'POST',
+        body: JSON.stringify({ text })
+      });
+    } else if (this.currentReader) {
+      // Reader reply
+      return this.readerApiFetch(`/api/interactions/reviews/${reviewId}/replies`, {
+        method: 'POST',
+        body: JSON.stringify({ text })
+      });
+    } else {
+      throw new Error('Not authenticated');
+    }
+  },
+
+  async deleteReviewReply(reviewId, replyId, bookId = null) {
+    // Auto-detect if author or reader
+    if (this.currentUser && bookId) {
+      // Author delete
+      return this.apiFetch(`/api/books/${bookId}/reviews/${reviewId}/replies/${replyId}`, {
+        method: 'DELETE'
+      });
+    } else if (this.currentReader) {
+      // Reader delete
+      return this.readerApiFetch(`/api/interactions/reviews/${reviewId}/replies/${replyId}`, {
+        method: 'DELETE'
+      });
+    } else {
+      throw new Error('Not authenticated');
+    }
+  },
+
+  // Comment Replies (Threaded Conversations)
+  async getCommentReplies(commentId) {
+    const res = await fetch(`/api/interactions/comments/${commentId}/replies`);
+    if (!res.ok) throw new Error('Failed to fetch comment replies');
+    return res.json();
+  },
+
+  async addCommentReply(commentId, text, bookId = null) {
+    // Auto-detect if author or reader
+    if (this.currentUser && bookId) {
+      // Author reply
+      return this.apiFetch(`/api/books/${bookId}/comments/${commentId}/replies`, {
+        method: 'POST',
+        body: JSON.stringify({ text })
+      });
+    } else if (this.currentReader) {
+      // Reader reply
+      return this.readerApiFetch(`/api/interactions/comments/${commentId}/replies`, {
+        method: 'POST',
+        body: JSON.stringify({ text })
+      });
+    } else {
+      throw new Error('Not authenticated');
+    }
+  },
+
+  async deleteCommentReply(commentId, replyId, bookId = null) {
+    // Auto-detect if author or reader
+    if (this.currentUser && bookId) {
+      // Author delete
+      return this.apiFetch(`/api/books/${bookId}/comments/${commentId}/replies/${replyId}`, {
+        method: 'DELETE'
+      });
+    } else if (this.currentReader) {
+      // Reader delete
+      return this.readerApiFetch(`/api/interactions/comments/${commentId}/replies/${replyId}`, {
+        method: 'DELETE'
+      });
+    } else {
+      throw new Error('Not authenticated');
+    }
   }
 };

@@ -4,6 +4,8 @@ import * as interactionsModel from '../db/models/interactions.js';
 import * as ratingsModel from '../db/models/ratings.js';
 import * as reviewsModel from '../db/models/reviews.js';
 import * as commentsModel from '../db/models/comments.js';
+import * as reviewRepliesModel from '../db/models/reviewReplies.js';
+import * as commentRepliesModel from '../db/models/commentReplies.js';
 
 const router = express.Router();
 
@@ -357,6 +359,148 @@ router.delete('/comments/:commentId', authenticateReader, async (req, res) => {
   } catch (err) {
     console.error('[DELETE /comments/:commentId] Error:', err.message);
     console.error('[DELETE /comments/:commentId] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+});
+
+// Review Replies (Reader endpoints)
+router.get('/reviews/:reviewId/replies', async (req, res) => {
+  try {
+    const replies = await reviewRepliesModel.getRepliesByReviewId(req.params.reviewId);
+    res.json(replies);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/reviews/:reviewId/replies', authenticateReader, async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    console.log('[POST /reviews/:reviewId/replies] Request:', {
+      reviewId: req.params.reviewId,
+      textLength: text?.length,
+      readerId: req.reader?.id
+    });
+
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({ error: 'Reply text is required' });
+    }
+    if (text.length > 2000) {
+      return res.status(400).json({ error: 'Reply must be 2000 characters or less' });
+    }
+
+    const reply = await reviewRepliesModel.addReply(
+      req.params.reviewId,
+      req.reader.id,
+      'reader',
+      text
+    );
+
+    console.log('[POST /reviews/:reviewId/replies] Success:', reply.id);
+    res.json(reply);
+  } catch (err) {
+    console.error('[POST /reviews/:reviewId/replies] Error:', err.message);
+    console.error('[POST /reviews/:reviewId/replies] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+});
+
+router.delete('/reviews/:reviewId/replies/:replyId', authenticateReader, async (req, res) => {
+  try {
+    console.log('[DELETE /reviews/:reviewId/replies/:replyId] Request:', {
+      replyId: req.params.replyId,
+      readerId: req.reader?.id
+    });
+
+    const result = await reviewRepliesModel.deleteReply(
+      req.params.replyId,
+      req.reader.id,
+      'reader'
+    );
+
+    if (!result) {
+      console.log('[DELETE /reviews/:reviewId/replies/:replyId] Forbidden - not owner');
+      return res.status(403).json({ error: 'Cannot delete this reply' });
+    }
+
+    console.log('[DELETE /reviews/:reviewId/replies/:replyId] Success');
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error('[DELETE /reviews/:reviewId/replies/:replyId] Error:', err.message);
+    console.error('[DELETE /reviews/:reviewId/replies/:replyId] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+});
+
+// Comment Replies (Reader endpoints)
+router.get('/comments/:commentId/replies', async (req, res) => {
+  try {
+    const replies = await commentRepliesModel.getRepliesByCommentId(req.params.commentId);
+    res.json(replies);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/comments/:commentId/replies', authenticateReader, async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    console.log('[POST /comments/:commentId/replies] Request:', {
+      commentId: req.params.commentId,
+      textLength: text?.length,
+      readerId: req.reader?.id
+    });
+
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({ error: 'Reply text is required' });
+    }
+    if (text.length > 2000) {
+      return res.status(400).json({ error: 'Reply must be 2000 characters or less' });
+    }
+
+    const reply = await commentRepliesModel.addReply(
+      req.params.commentId,
+      req.reader.id,
+      'reader',
+      text
+    );
+
+    console.log('[POST /comments/:commentId/replies] Success:', reply.id);
+    res.json(reply);
+  } catch (err) {
+    console.error('[POST /comments/:commentId/replies] Error:', err.message);
+    console.error('[POST /comments/:commentId/replies] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+});
+
+router.delete('/comments/:commentId/replies/:replyId', authenticateReader, async (req, res) => {
+  try {
+    console.log('[DELETE /comments/:commentId/replies/:replyId] Request:', {
+      replyId: req.params.replyId,
+      readerId: req.reader?.id
+    });
+
+    const result = await commentRepliesModel.deleteReply(
+      req.params.replyId,
+      req.reader.id,
+      'reader'
+    );
+
+    if (!result) {
+      console.log('[DELETE /comments/:commentId/replies/:replyId] Forbidden - not owner');
+      return res.status(403).json({ error: 'Cannot delete this reply' });
+    }
+
+    console.log('[DELETE /comments/:commentId/replies/:replyId] Success');
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error('[DELETE /comments/:commentId/replies/:replyId] Error:', err.message);
+    console.error('[DELETE /comments/:commentId/replies/:replyId] Stack:', err.stack);
     res.status(500).json({ error: 'Server error', details: err.message });
   }
 });

@@ -5,6 +5,8 @@ import * as booksModel from '../db/models/books.js';
 import * as ratingsModel from '../db/models/ratings.js';
 import * as reviewsModel from '../db/models/reviews.js';
 import * as commentsModel from '../db/models/comments.js';
+import * as reviewRepliesModel from '../db/models/reviewReplies.js';
+import * as commentRepliesModel from '../db/models/commentReplies.js';
 
 const router = express.Router();
 
@@ -262,6 +264,158 @@ router.delete('/:id/comments/:commentId/reply', authenticate, async (req, res) =
       return res.status(404).json({ error: err.message });
     }
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Review Replies (Author endpoints)
+router.post('/:id/reviews/:reviewId/replies', authenticate, async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    console.log('[POST /books/:id/reviews/:reviewId/replies] Request:', {
+      bookId: req.params.id,
+      reviewId: req.params.reviewId,
+      textLength: text?.length,
+      authorId: req.user?.id
+    });
+
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({ error: 'Reply text is required' });
+    }
+    if (text.length > 2000) {
+      return res.status(400).json({ error: 'Reply must be 2000 characters or less' });
+    }
+
+    // Verify book ownership
+    const book = await booksModel.getBookById(req.params.id);
+    if (!book) return res.status(404).json({ error: 'Book not found' });
+    if (book.author_id !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden: You can only reply to reviews on your own books' });
+    }
+
+    const reply = await reviewRepliesModel.addReply(
+      req.params.reviewId,
+      req.user.id,
+      'author',
+      text
+    );
+
+    console.log('[POST /books/:id/reviews/:reviewId/replies] Success:', reply.id);
+    res.json(reply);
+  } catch (err) {
+    console.error('[POST /books/:id/reviews/:reviewId/replies] Error:', err.message);
+    console.error('[POST /books/:id/reviews/:reviewId/replies] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+});
+
+router.delete('/:id/reviews/:reviewId/replies/:replyId', authenticate, async (req, res) => {
+  try {
+    console.log('[DELETE /books/:id/reviews/:reviewId/replies/:replyId] Request:', {
+      replyId: req.params.replyId,
+      authorId: req.user?.id
+    });
+
+    // Verify book ownership
+    const book = await booksModel.getBookById(req.params.id);
+    if (!book) return res.status(404).json({ error: 'Book not found' });
+    if (book.author_id !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const result = await reviewRepliesModel.deleteReply(
+      req.params.replyId,
+      req.user.id,
+      'author'
+    );
+
+    if (!result) {
+      console.log('[DELETE /books/:id/reviews/:reviewId/replies/:replyId] Forbidden - not owner');
+      return res.status(403).json({ error: 'Cannot delete this reply' });
+    }
+
+    console.log('[DELETE /books/:id/reviews/:reviewId/replies/:replyId] Success');
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error('[DELETE /books/:id/reviews/:reviewId/replies/:replyId] Error:', err.message);
+    console.error('[DELETE /books/:id/reviews/:reviewId/replies/:replyId] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+});
+
+// Comment Replies (Author endpoints)
+router.post('/:id/comments/:commentId/replies', authenticate, async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    console.log('[POST /books/:id/comments/:commentId/replies] Request:', {
+      bookId: req.params.id,
+      commentId: req.params.commentId,
+      textLength: text?.length,
+      authorId: req.user?.id
+    });
+
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({ error: 'Reply text is required' });
+    }
+    if (text.length > 2000) {
+      return res.status(400).json({ error: 'Reply must be 2000 characters or less' });
+    }
+
+    // Verify book ownership
+    const book = await booksModel.getBookById(req.params.id);
+    if (!book) return res.status(404).json({ error: 'Book not found' });
+    if (book.author_id !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden: You can only reply to comments on your own books' });
+    }
+
+    const reply = await commentRepliesModel.addReply(
+      req.params.commentId,
+      req.user.id,
+      'author',
+      text
+    );
+
+    console.log('[POST /books/:id/comments/:commentId/replies] Success:', reply.id);
+    res.json(reply);
+  } catch (err) {
+    console.error('[POST /books/:id/comments/:commentId/replies] Error:', err.message);
+    console.error('[POST /books/:id/comments/:commentId/replies] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+});
+
+router.delete('/:id/comments/:commentId/replies/:replyId', authenticate, async (req, res) => {
+  try {
+    console.log('[DELETE /books/:id/comments/:commentId/replies/:replyId] Request:', {
+      replyId: req.params.replyId,
+      authorId: req.user?.id
+    });
+
+    // Verify book ownership
+    const book = await booksModel.getBookById(req.params.id);
+    if (!book) return res.status(404).json({ error: 'Book not found' });
+    if (book.author_id !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const result = await commentRepliesModel.deleteReply(
+      req.params.replyId,
+      req.user.id,
+      'author'
+    );
+
+    if (!result) {
+      console.log('[DELETE /books/:id/comments/:commentId/replies/:replyId] Forbidden - not owner');
+      return res.status(403).json({ error: 'Cannot delete this reply' });
+    }
+
+    console.log('[DELETE /books/:id/comments/:commentId/replies/:replyId] Success');
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error('[DELETE /books/:id/comments/:commentId/replies/:replyId] Error:', err.message);
+    console.error('[DELETE /books/:id/comments/:commentId/replies/:replyId] Stack:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 

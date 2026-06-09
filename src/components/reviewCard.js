@@ -1,10 +1,12 @@
 import { RatingStars } from './ratingStars.js';
+import { ReplyThread } from './replyThread.js';
 import { showToast } from './toast.js';
 import { store } from '../store/index.js';
 
 export function ReviewCard({ review, currentReaderId, onDelete, onEdit, onHelpful, hasVotedHelpful = false, isAuthor = false, bookId = null, onReplyUpdate = null, authorName = 'Author' }) {
   const card = document.createElement('div');
   card.className = 'bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 mb-4';
+  card.id = `review-card-${review.id}`;
 
   const isOwner = currentReaderId && review.reader_id === currentReaderId;
   const createdDate = new Date(review.created_at).toLocaleDateString('en-US', {
@@ -13,13 +15,6 @@ export function ReviewCard({ review, currentReaderId, onDelete, onEdit, onHelpfu
     day: 'numeric'
   });
   const wasEdited = review.updated_at && new Date(review.updated_at) > new Date(review.created_at);
-
-  const hasReply = review.author_reply && review.author_reply.trim().length > 0;
-  const replyDate = hasReply && review.author_reply_at ? new Date(review.author_reply_at).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }) : '';
 
   card.innerHTML = `
     <div class="flex items-start justify-between mb-3">
@@ -52,39 +47,7 @@ export function ReviewCard({ review, currentReaderId, onDelete, onEdit, onHelpfu
     <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">${review.title}</h3>
     <p class="text-slate-700 dark:text-slate-300 leading-relaxed mb-4">${review.review_text}</p>
 
-    ${hasReply ? `
-      <div class="bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-indigo-500 rounded-lg p-4 mb-4">
-        <div class="flex items-start gap-3">
-          <i class="fa-solid fa-book text-indigo-600 dark:text-indigo-400 mt-1"></i>
-          <div class="flex-1">
-            <div class="flex items-center justify-between mb-2">
-              <div>
-                <span class="font-semibold text-indigo-900 dark:text-indigo-100">${authorName}</span>
-                <span class="ml-2 px-2 py-0.5 bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 text-xs rounded-full font-medium">Author</span>
-              </div>
-              ${isAuthor ? `
-                <div class="flex gap-2">
-                  <button id="edit-reply-btn-${review.id}" class="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                    <i class="fa-solid fa-edit"></i>
-                  </button>
-                  <button id="delete-reply-btn-${review.id}" class="text-sm text-red-600 hover:text-red-700 dark:text-red-400">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                </div>
-              ` : ''}
-            </div>
-            <p class="text-indigo-900 dark:text-indigo-100 leading-relaxed">${review.author_reply}</p>
-            <p class="text-sm text-indigo-600 dark:text-indigo-400 mt-2">${replyDate}</p>
-          </div>
-        </div>
-      </div>
-    ` : ''}
-
-    ${isAuthor && !hasReply ? `
-      <div id="reply-section-${review.id}" class="mb-4"></div>
-    ` : ''}
-
-    <div class="flex items-center gap-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+    <div class="flex items-center gap-4 pb-3 border-b border-slate-200 dark:border-slate-700">
       <button id="helpful-btn-${review.id}" class="text-sm transition ${
         hasVotedHelpful
           ? 'text-green-600 dark:text-green-400 cursor-default font-medium'
@@ -95,12 +58,9 @@ export function ReviewCard({ review, currentReaderId, onDelete, onEdit, onHelpfu
         <i class="fa-${hasVotedHelpful ? 'solid' : 'regular'} fa-thumbs-up mr-1"></i>
         ${hasVotedHelpful ? 'You found this helpful' : 'Helpful'} (${review.helpful_count || 0})
       </button>
-      ${isAuthor && !hasReply ? `
-        <button id="reply-btn-${review.id}" class="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-          <i class="fa-solid fa-reply mr-1"></i>Reply
-        </button>
-      ` : ''}
     </div>
+
+    <div id="reply-thread-${review.id}"></div>
   `;
 
   // Add rating stars
@@ -133,106 +93,55 @@ export function ReviewCard({ review, currentReaderId, onDelete, onEdit, onHelpfu
     });
   }
 
-  // Reply functionality for authors
-  if (isAuthor && bookId) {
-    const replyBtn = card.querySelector(`#reply-btn-${review.id}`);
-    const editReplyBtn = card.querySelector(`#edit-reply-btn-${review.id}`);
-    const deleteReplyBtn = card.querySelector(`#delete-reply-btn-${review.id}`);
-
-    function showReplyForm(existingReply = '') {
-      const replySection = card.querySelector(`#reply-section-${review.id}`);
-      if (!replySection) return;
-
-      replySection.innerHTML = `
-        <div class="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
-          <h4 class="font-semibold text-slate-900 dark:text-white mb-3">Reply to Review</h4>
-          <textarea
-            id="reply-text-${review.id}"
-            rows="3"
-            placeholder="Write your reply..."
-            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none mb-2"
-          >${existingReply}</textarea>
-          <div class="flex items-center justify-between">
-            <span id="char-count-${review.id}" class="text-sm text-slate-500 dark:text-slate-400">
-              ${existingReply.length}/2000 characters
-            </span>
-            <div class="flex gap-2">
-              <button id="cancel-reply-${review.id}" class="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-                Cancel
-              </button>
-              <button id="submit-reply-${review.id}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium">
-                Submit Reply
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-
-      const textarea = replySection.querySelector(`#reply-text-${review.id}`);
-      const charCount = replySection.querySelector(`#char-count-${review.id}`);
-      const cancelBtn = replySection.querySelector(`#cancel-reply-${review.id}`);
-      const submitBtn = replySection.querySelector(`#submit-reply-${review.id}`);
-
-      textarea.addEventListener('input', () => {
-        charCount.textContent = `${textarea.value.length}/2000 characters`;
-        if (textarea.value.length > 2000) {
-          charCount.classList.add('text-red-600');
-          submitBtn.disabled = true;
-        } else {
-          charCount.classList.remove('text-red-600');
-          submitBtn.disabled = false;
-        }
-      });
-
-      cancelBtn.addEventListener('click', () => {
-        replySection.innerHTML = '';
-      });
-
-      submitBtn.addEventListener('click', async () => {
-        const replyText = textarea.value.trim();
-        if (!replyText) {
-          showToast('Please enter a reply', 'error');
-          return;
-        }
-        if (replyText.length > 2000) {
-          showToast('Reply must be 2000 characters or less', 'error');
-          return;
-        }
-
-        try {
-          await store.replyToReview(bookId, review.id, replyText);
-          showToast('Reply posted!');
-          if (onReplyUpdate) onReplyUpdate();
-        } catch (err) {
-          showToast(err.message, 'error');
-        }
-      });
-
-      textarea.focus();
-    }
-
-    if (replyBtn) {
-      replyBtn.addEventListener('click', () => showReplyForm());
-    }
-
-    if (editReplyBtn) {
-      editReplyBtn.addEventListener('click', () => showReplyForm(review.author_reply || ''));
-    }
-
-    if (deleteReplyBtn) {
-      deleteReplyBtn.addEventListener('click', async () => {
-        if (confirm('Delete your reply?')) {
-          try {
-            await store.deleteReviewReply(bookId, review.id);
-            showToast('Reply deleted');
-            if (onReplyUpdate) onReplyUpdate();
-          } catch (err) {
-            showToast(err.message, 'error');
-          }
-        }
-      });
-    }
-  }
+  // Load and display reply thread
+  loadReplyThread(card, review.id, bookId, authorName);
 
   return card;
+}
+
+async function loadReplyThread(card, reviewId, bookId, authorName) {
+  const replyThreadContainer = card.querySelector(`#reply-thread-${reviewId}`);
+  if (!replyThreadContainer) return;
+
+  try {
+    // Fetch replies
+    const replies = await store.getReviewReplies(reviewId);
+
+    // Determine current user
+    let currentUserId = null;
+    let currentUserType = null;
+    if (store.currentUser) {
+      currentUserId = store.currentUser.id;
+      currentUserType = 'author';
+    } else if (store.currentReader) {
+      currentUserId = store.currentReader.id;
+      currentUserType = 'reader';
+    }
+
+    // Create reply thread
+    const replyThread = ReplyThread({
+      replies,
+      onReply: async (text) => {
+        await store.addReviewReply(reviewId, text, bookId);
+        // Reload reply thread
+        await loadReplyThread(card, reviewId, bookId, authorName);
+      },
+      onDelete: async (replyId) => {
+        await store.deleteReviewReply(reviewId, replyId, bookId);
+        showToast('Reply deleted');
+        // Reload reply thread
+        await loadReplyThread(card, reviewId, bookId, authorName);
+      },
+      currentUserId,
+      currentUserType,
+      parentType: 'review',
+      parentId: reviewId
+    });
+
+    replyThreadContainer.innerHTML = '';
+    replyThreadContainer.appendChild(replyThread);
+  } catch (err) {
+    console.error('Error loading reply thread:', err);
+    replyThreadContainer.innerHTML = '<p class="text-sm text-red-600 dark:text-red-400 mt-3">Failed to load replies</p>';
+  }
 }

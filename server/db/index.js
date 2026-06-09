@@ -184,6 +184,28 @@ async function init() {
     FOREIGN KEY(reader_id) REFERENCES readers(id) ON DELETE SET NULL
   );`);
 
+  // Create review_replies table for threaded conversations
+  await pool.query(`CREATE TABLE IF NOT EXISTS review_replies (
+    id TEXT PRIMARY KEY,
+    review_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    user_type TEXT NOT NULL CHECK (user_type IN ('author', 'reader')),
+    text TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    FOREIGN KEY(review_id) REFERENCES reviews(id) ON DELETE CASCADE
+  );`);
+
+  // Create comment_replies table for threaded conversations
+  await pool.query(`CREATE TABLE IF NOT EXISTS comment_replies (
+    id TEXT PRIMARY KEY,
+    comment_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    user_type TEXT NOT NULL CHECK (user_type IN ('author', 'reader')),
+    text TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    FOREIGN KEY(comment_id) REFERENCES comments(id) ON DELETE CASCADE
+  );`);
+
   // Migrations: Add columns if they don't exist in existing databases
   try {
     // Check and add reader_id to comments if missing
