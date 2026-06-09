@@ -48,19 +48,27 @@ export const store = {
     const token = localStorage.getItem('ink_token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(path, { headers: { ...headers, ...(options.headers || {}) }, ...options });
+    try {
+      const res = await fetch(path, { headers: { ...headers, ...(options.headers || {}) }, ...options });
 
-    if (res.status === 401 || res.status === 403) {
-      this.currentUser = null;
-      localStorage.removeItem('ink_token');
-      this.saveLocal();
-      if (window.router) window.router.navigate('author-login');
-      throw new Error('Session expired or access denied.');
+      if (res.status === 401 || res.status === 403) {
+        this.currentUser = null;
+        localStorage.removeItem('ink_token');
+        this.saveLocal();
+        if (window.router) window.router.navigate('author-login');
+        throw new Error('Session expired or access denied.');
+      }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'API Error');
+      return data;
+    } catch (err) {
+      // Handle network errors
+      if (err.message.includes('Failed to fetch') || err.name === 'TypeError') {
+        throw new Error('Unable to connect to server. Please ensure the server is running.');
+      }
+      throw err;
     }
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'API Error');
-    return data;
   },
 
   async readerApiFetch(path, options = {}) {
@@ -68,19 +76,27 @@ export const store = {
     const token = localStorage.getItem('ink_reader_token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(path, { headers: { ...headers, ...(options.headers || {}) }, ...options });
+    try {
+      const res = await fetch(path, { headers: { ...headers, ...(options.headers || {}) }, ...options });
 
-    if (res.status === 401 || res.status === 403) {
-      this.currentReader = null;
-      localStorage.removeItem('ink_reader_token');
-      this.saveLocal();
-      if (window.router) window.router.navigate('reader-login');
-      throw new Error('Session expired or access denied.');
+      if (res.status === 401 || res.status === 403) {
+        this.currentReader = null;
+        localStorage.removeItem('ink_reader_token');
+        this.saveLocal();
+        if (window.router) window.router.navigate('reader-login');
+        throw new Error('Session expired or access denied.');
+      }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'API Error');
+      return data;
+    } catch (err) {
+      // Handle network errors
+      if (err.message.includes('Failed to fetch') || err.name === 'TypeError') {
+        throw new Error('Unable to connect to server. Please ensure the server is running.');
+      }
+      throw err;
     }
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'API Error');
-    return data;
   },
 
   async getAuthors() {
