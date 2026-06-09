@@ -27,10 +27,6 @@ export const router = {
     const readerLoginBtn = document.getElementById('reader-login-btn');
     const searchContainer = document.getElementById('nav-search-container');
 
-    console.log('[updateNav] currentUser:', store.currentUser);
-    console.log('[updateNav] currentReader:', store.currentReader);
-    console.log('[updateNav] readerLoginBtn element:', readerLoginBtn);
-
     if (store.currentUser) {
       userMenu.classList.remove('hidden');
       readerMenu.classList.add('hidden');
@@ -38,19 +34,12 @@ export const router = {
       document.getElementById('user-name').textContent = store.currentUser.name;
       document.getElementById('user-initial').textContent = store.currentUser.name.charAt(0);
     } else if (store.currentReader) {
-      console.log('[updateNav] Reader is logged in, hiding login button');
       readerMenu.classList.remove('hidden');
       userMenu.classList.add('hidden');
-      if (readerLoginBtn) {
-        readerLoginBtn.style.display = 'none';
-        console.log('[updateNav] Reader login button hidden with display:none');
-      } else {
-        console.log('[updateNav] WARNING: readerLoginBtn element not found!');
-      }
+      if (readerLoginBtn) readerLoginBtn.style.display = 'none';
       document.getElementById('reader-name').textContent = store.currentReader.name;
       document.getElementById('reader-initial').textContent = store.currentReader.name.charAt(0);
     } else {
-      console.log('[updateNav] No one logged in, showing login button');
       userMenu.classList.add('hidden');
       readerMenu.classList.add('hidden');
       if (readerLoginBtn) readerLoginBtn.style.display = '';
