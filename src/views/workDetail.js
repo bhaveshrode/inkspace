@@ -253,9 +253,11 @@ export async function workDetail(id) {
     try {
       const reviews = await store.getReviews(id);
       let userReview = null;
+      let helpfulVotes = [];
 
       if (store.currentReader) {
         userReview = await store.getUserReview(id);
+        helpfulVotes = await store.getReaderHelpfulVotes(id);
       }
 
       reviewsContainer.innerHTML = '';
@@ -312,6 +314,7 @@ export async function workDetail(id) {
           const reviewCard = ReviewCard({
             review,
             currentReaderId: store.currentReader?.id,
+            hasVotedHelpful: helpfulVotes.includes(review.id),
             onDelete: async (reviewId) => {
               try {
                 await store.deleteReview(id);
@@ -327,10 +330,19 @@ export async function workDetail(id) {
             },
             onHelpful: async (reviewId) => {
               try {
-                await store.markReviewHelpful(reviewId);
-                showToast('Marked as helpful');
-                reviewsLoaded = false;
-                loadReviews();
+                const result = await store.markReviewHelpful(reviewId);
+                if (result && result.success === false) {
+                  showToast(result.message || 'You have already marked this review as helpful', 'error');
+                } else if (result && result.success === true) {
+                  showToast('Marked as helpful');
+                  reviewsLoaded = false;
+                  loadReviews();
+                } else {
+                  // Fallback for unexpected response
+                  showToast('Marked as helpful');
+                  reviewsLoaded = false;
+                  loadReviews();
+                }
               } catch (err) {
                 showToast(err.message, 'error');
               }

@@ -124,16 +124,65 @@ export async function getReviewsForAuthorBooks(authorId) {
   return res.rows;
 }
 
-// Increment helpful count for a review
-export async function incrementHelpfulCount(reviewId) {
+// Check if a reader has voted helpful on a review
+export async function hasVotedHelpful(reviewId, readerId) {
   const pool = getPool();
   const res = await pool.query(`
-    UPDATE reviews
-    SET helpful_count = helpful_count + 1
-    WHERE id = $1
-    RETURNING helpful_count
-  `, [reviewId]);
-  return res.rows[0]?.helpful_count || 0;
+    SELECT 1 FROM review_helpful
+    WHERE review_id = $1 AND reader_id = $2
+  `, [reviewId, readerId]);
+  return res.rows.length > 0;
+}
+
+// Increment helpful count for a review (with duplicate vote prevention)
+export async function incrementHelpfulCount(reviewId, readerId) {
+  const pool = getPool();
+
+  // Check if reader already voted
+  const alreadyVoted = await hasVotedHelpful(reviewId, readerId);
+  if (alreadyVoted) {
+    return { success: false, message: 'Already voted helpful' };
+  }
+
+  // Use transaction to ensure atomicity
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Record the vote
+    await client.query(`
+      INSERT INTO review_helpful (review_id, reader_id)
+      VALUES ($1, $2)
+    `, [reviewId, readerId]);
+
+    // Increment the count
+    const res = await client.query(`
+      UPDATE reviews
+      SET helpful_count = helpful_count + 1
+      WHERE id = $1
+      RETURNING helpful_count
+    `, [reviewId]);
+
+    await client.query('COMMIT');
+    return { success: true, helpful_count: res.rows[0]?.helpful_count || 0 };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+// Get all review IDs that a reader has voted helpful on for a specific book
+export async function getReaderHelpfulVotes(readerId, bookId) {
+  const pool = getPool();
+  const res = await pool.query(`
+    SELECT rh.review_id
+    FROM review_helpful rh
+    JOIN reviews r ON rh.review_id = r.id
+    WHERE rh.reader_id = $1 AND r.book_id = $2
+  `, [readerId, bookId]);
+  return res.rows.map(row => row.review_id);
 }
 
 // Get review statistics for a book

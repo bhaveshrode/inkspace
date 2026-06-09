@@ -2,7 +2,7 @@ import { RatingStars } from './ratingStars.js';
 import { showToast } from './toast.js';
 import { store } from '../store/index.js';
 
-export function ReviewCard({ review, currentReaderId, onDelete, onEdit, onHelpful }) {
+export function ReviewCard({ review, currentReaderId, onDelete, onEdit, onHelpful, hasVotedHelpful = false }) {
   const card = document.createElement('div');
   card.className = 'bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 mb-4';
 
@@ -46,9 +46,15 @@ export function ReviewCard({ review, currentReaderId, onDelete, onEdit, onHelpfu
     <p class="text-slate-700 dark:text-slate-300 leading-relaxed mb-4">${review.review_text}</p>
 
     <div class="flex items-center gap-4 pt-3 border-t border-slate-200 dark:border-slate-700">
-      <button id="helpful-btn-${review.id}" class="text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition ${!currentReaderId ? 'opacity-50 cursor-not-allowed' : ''}">
-        <i class="fa-solid fa-thumbs-up mr-1"></i>
-        Helpful (${review.helpful_count || 0})
+      <button id="helpful-btn-${review.id}" class="text-sm transition ${
+        hasVotedHelpful
+          ? 'text-green-600 dark:text-green-400 cursor-default font-medium'
+          : !currentReaderId
+            ? 'text-slate-600 dark:text-slate-400 opacity-50 cursor-not-allowed'
+            : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer'
+      }" ${hasVotedHelpful || !currentReaderId ? 'disabled' : ''}>
+        <i class="fa-${hasVotedHelpful ? 'solid' : 'regular'} fa-thumbs-up mr-1"></i>
+        ${hasVotedHelpful ? 'You found this helpful' : 'Helpful'} (${review.helpful_count || 0})
       </button>
     </div>
   `;
@@ -77,12 +83,10 @@ export function ReviewCard({ review, currentReaderId, onDelete, onEdit, onHelpfu
   }
 
   const helpfulBtn = card.querySelector(`#helpful-btn-${review.id}`);
-  if (helpfulBtn && currentReaderId && onHelpful) {
+  if (helpfulBtn && currentReaderId && onHelpful && !hasVotedHelpful) {
     helpfulBtn.addEventListener('click', async () => {
       await onHelpful(review.id);
     });
-  } else if (!currentReaderId) {
-    helpfulBtn.style.cursor = 'not-allowed';
   }
 
   return card;

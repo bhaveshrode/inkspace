@@ -205,8 +205,11 @@ router.delete('/reviews/:bookId', authenticateReader, async (req, res) => {
 
 router.post('/reviews/:reviewId/helpful', authenticateReader, async (req, res) => {
   try {
-    const count = await reviewsModel.incrementHelpfulCount(req.params.reviewId);
-    res.json({ helpful_count: count });
+    const result = await reviewsModel.incrementHelpfulCount(req.params.reviewId, req.reader.id);
+    if (!result.success) {
+      return res.status(409).json({ error: result.message, alreadyVoted: true });
+    }
+    res.json({ helpful_count: result.helpful_count, success: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -217,6 +220,16 @@ router.get('/reviews/:bookId/stats', async (req, res) => {
   try {
     const stats = await reviewsModel.getReviewStatsByBookId(req.params.bookId);
     res.json(stats);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/reviews/:bookId/helpful-votes', authenticateReader, async (req, res) => {
+  try {
+    const votes = await reviewsModel.getReaderHelpfulVotes(req.reader.id, req.params.bookId);
+    res.json({ votes });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

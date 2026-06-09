@@ -160,6 +160,15 @@ async function init() {
     UNIQUE(reader_id, book_id)
   );`);
 
+  await pool.query(`CREATE TABLE IF NOT EXISTS review_helpful (
+    review_id TEXT NOT NULL,
+    reader_id TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    PRIMARY KEY(review_id, reader_id),
+    FOREIGN KEY(review_id) REFERENCES reviews(id) ON DELETE CASCADE,
+    FOREIGN KEY(reader_id) REFERENCES readers(id) ON DELETE CASCADE
+  );`);
+
   await pool.query(`CREATE TABLE IF NOT EXISTS comments (
     id TEXT PRIMARY KEY,
     book_id TEXT NOT NULL,

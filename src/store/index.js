@@ -296,14 +296,32 @@ export const store = {
   },
 
   async markReviewHelpful(reviewId) {
-    return this.readerApiFetch(`/api/interactions/reviews/${reviewId}/helpful`, {
-      method: 'POST'
-    });
+    try {
+      const result = await this.readerApiFetch(`/api/interactions/reviews/${reviewId}/helpful`, {
+        method: 'POST'
+      });
+      return { success: true, ...result };
+    } catch (err) {
+      // If 409 conflict, user already voted
+      if (err.message.includes('409') || err.message.includes('Already')) {
+        return { success: false, alreadyVoted: true, message: 'You have already marked this review as helpful' };
+      }
+      throw err;
+    }
   },
 
   async getReviewStats(bookId) {
     const res = await fetch(`/api/interactions/reviews/${bookId}/stats`);
     return res.json();
+  },
+
+  async getReaderHelpfulVotes(bookId) {
+    try {
+      const res = await this.readerApiFetch(`/api/interactions/reviews/${bookId}/helpful-votes`);
+      return res.votes || [];
+    } catch (e) {
+      return [];
+    }
   },
 
   async getBookDetailedReviews(bookId) {
