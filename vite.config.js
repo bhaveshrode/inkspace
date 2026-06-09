@@ -1,17 +1,18 @@
 import { defineConfig } from 'vite';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  // Root is project root, not public/
-  root: '.',
-  publicDir: 'public',
+  // Set root to public directory so index.html is at /
+  root: 'public',
+  publicDir: false, // Disable since public IS the root
   build: {
-    outDir: 'dist',
+    outDir: '../dist',
     emptyOutDir: true,
     rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'public/index.html')
-      }
+      input: path.resolve(__dirname, 'public/index.html')
     }
   },
   server: {
