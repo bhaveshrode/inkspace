@@ -186,6 +186,19 @@ async function init() {
 
   // Migrations: Add columns if they don't exist in existing databases
   try {
+    // Check and add reader_id to comments if missing
+    const commentsReaderIdCheck = await pool.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name='comments' AND column_name='reader_id'
+    `);
+
+    if (commentsReaderIdCheck.rows.length === 0) {
+      await pool.query(`ALTER TABLE comments ADD COLUMN reader_id TEXT`);
+      await pool.query(`ALTER TABLE comments ADD CONSTRAINT fk_comments_reader FOREIGN KEY (reader_id) REFERENCES readers(id) ON DELETE SET NULL`);
+      console.log('[DB] Added reader_id column to comments table');
+    }
+
     // Check and add author_reply to reviews
     const reviewsCheck = await pool.query(`
       SELECT column_name
