@@ -122,4 +122,23 @@ router.get('/:id/ratings', async (req, res) => {
   }
 });
 
+// Get detailed ratings for a book (protected - author only)
+router.get('/:id/ratings/detailed', authenticate, async (req, res) => {
+  try {
+    const book = await booksModel.getBookById(req.params.id);
+    if (!book) return res.status(404).json({ error: 'Book not found' });
+    if (book.author_id !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const breakdown = await ratingsModel.getRatingsBreakdownByBookId(req.params.id);
+    const detailed = await ratingsModel.getRatingsWithReaderDetails(req.params.id);
+
+    res.json({ breakdown, detailed });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;

@@ -1,7 +1,8 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../middleware/auth.js';
+import { authenticate, JWT_SECRET } from '../middleware/auth.js';
 import * as authorsModel from '../db/models/authors.js';
+import * as ratingsModel from '../db/models/ratings.js';
 
 const router = express.Router();
 
@@ -58,6 +59,17 @@ router.post('/login', async (req, res) => {
     const { password_hash, ...safe } = user;
     const token = jwt.sign({ id: safe.id, email: safe.email, name: safe.name }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ user: safe, token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get author statistics (protected)
+router.get('/statistics/me', authenticate, async (req, res) => {
+  try {
+    const stats = await ratingsModel.getAuthorStatistics(req.user.id);
+    res.json(stats);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

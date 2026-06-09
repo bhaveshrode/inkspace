@@ -105,6 +105,11 @@ window.handleSearch = function (e) {
   if (query) router.navigate('search', { query });
 };
 
+// View book ratings
+window.viewBookRatings = function (bookId) {
+  router.navigate('book-ratings', { id: bookId });
+};
+
 // Make router globally available
 window.router = router;
 

@@ -259,5 +259,13 @@ export const store = {
   async getBookAverageRating(bookId) {
     const res = await fetch(`/api/books/${bookId}/ratings`);
     return res.json();
+  },
+
+  async getBookDetailedRatings(bookId) {
+    return this.apiFetch(`/api/books/${bookId}/ratings/detailed`);
+  },
+
+  async getAuthorStatistics() {
+    return this.apiFetch('/api/authors/statistics/me');
   }
 };
