@@ -2,15 +2,22 @@
 
 ## Project Overview
 
-InkSpace (Story-Hub) is a full-stack web application for reading, writing, and discovering stories. It uses a PostgreSQL database, Express.js REST API, and vanilla JavaScript SPA frontend.
+InkSpace (Story-Hub) is a full-stack web application for reading, writing, and discovering stories. It features dual account types (authors and readers) with comprehensive social and engagement features. Uses PostgreSQL database, Express.js REST API, and vanilla JavaScript SPA frontend.
 
 **Tech Stack:**
 - Backend: Node.js + Express.js + PostgreSQL
 - Frontend: Vanilla JavaScript (no framework)
-- Authentication: JWT with bcryptjs
+- Authentication: JWT with bcryptjs (separate for authors and readers)
 - Styling: Tailwind CSS (CDN)
 - Rich Text: Quill.js editor
 - PWA: Service Worker enabled
+
+**Key Features:**
+- **Author Accounts:** Write, publish, and manage books and chapters
+- **Reader Accounts:** Read, bookmark, rate, comment, and follow authors
+- **Social Features:** Follow authors, view follower counts
+- **Engagement:** 1-5 star ratings, comments/reviews, bookmarks
+- **Reading History:** Track reading progress, continue reading from last position
 
 ---
 
@@ -25,17 +32,21 @@ inkspace/
 │   ├── routes/        # API route handlers
 │   │   ├── index.js   # Health check routes
 │   │   ├── authors.js # Author auth & management
+│   │   ├── readers.js # Reader auth & management
 │   │   ├── books.js   # Book CRUD operations
 │   │   ├── chapters.js# Chapter management
-│   │   └── user.js    # User interactions
+│   │   ├── user.js    # User interactions (legacy)
+│   │   └── interactions.js # Reader interactions (bookmarks, history, follows, ratings)
 │   ├── middleware/    # Express middleware
-│   │   └── auth.js    # JWT authentication
+│   │   └── auth.js    # JWT authentication (authors & readers)
 │   └── db/            # Database layer
 │       ├── index.js   # DB connection & initialization
 │       └── models/    # Data access layer
 │           ├── authors.js
+│           ├── readers.js
 │           ├── books.js
 │           ├── chapters.js
+│           ├── ratings.js
 │           └── interactions.js
 ├── src/               # Frontend source (bundled by Vite)
 │   ├── main.js        # Application entry point
@@ -43,10 +54,15 @@ inkspace/
 │   │   └── index.js
 │   ├── store/         # State management & API client
 │   │   └── index.js
-│   ├── views/         # Page components (10 files)
+│   ├── views/         # Page components (13 files)
+│   │   ├── home.js
+│   │   ├── authorLogin.js, authorSignup.js, authorDashboard.js
+│   │   ├── readerLogin.js, readerSignup.js, readerDashboard.js
+│   │   ├── workDetail.js, read.js
 │   │   └── *.js
 │   ├── components/    # Reusable UI components
 │   │   ├── workCard.js
+│   │   ├── ratingStars.js
 │   │   ├── notFound.js
 │   │   └── toast.js
 │   └── utils/         # Utility functions
@@ -83,9 +99,11 @@ inkspace/
 #### Location
 Place route handlers in appropriate files under `server/routes/`:
 - Author-related: `server/routes/authors.js`
+- Reader-related: `server/routes/readers.js`
 - Book-related: `server/routes/books.js`
 - Chapter-related: `server/routes/chapters.js`
-- User interactions: `server/routes/user.js`
+- Reader interactions: `server/routes/interactions.js` (bookmarks, history, follows, ratings)
+- User interactions (legacy): `server/routes/user.js`
 
 #### Pattern for Route Files
 ```javascript
@@ -343,9 +361,17 @@ import { ComponentName } from '../components/componentName.js';
 #### LocalStorage Keys
 Use `ink_` prefix for all localStorage keys:
 - `ink_lists` - User's favorite/reading lists
-- `ink_current_user` - Current user object
+- `ink_current_user` - Current author object
+- `ink_token` - Author JWT authentication token
+- `ink_current_reader` - Current reader object
+- `ink_reader_token` - Reader JWT authentication token
 - `ink_dark_mode` - Dark mode preference
-- `ink_token` - JWT authentication token
+
+**Important:** Authors and readers are completely separate:
+- Authors use `ink_token` and `ink_current_user`
+- Readers use `ink_reader_token` and `ink_current_reader`
+- Cannot be logged in as both simultaneously
+- Different authentication middleware (authenticate vs authenticateReader)
 
 #### Store Methods Pattern
 ```javascript
@@ -565,8 +591,14 @@ window.addEventListener('beforeinstallprompt', (e) => {
 ## Testing Accounts
 
 Always maintain these demo accounts in seed data:
-- **elena@inkspace.com** / password
-- **marcus@inkspace.com** / password
+
+**Authors:**
+- **elena@inkspace.com** / password (Elena Fisher - Fantasy writer)
+- **marcus@inkspace.com** / password (Marcus Chen - Sci-fi author)
+
+**Readers:**
+- **reader1@inkspace.com** / password (Alex Reader - Book lover)
+- **reader2@inkspace.com** / password (Sam Bookworm - Reading enthusiast)
 
 ---
 
