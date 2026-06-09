@@ -14,10 +14,16 @@ InkSpace (Story-Hub) is a full-stack web application for reading, writing, and d
 
 **Key Features:**
 - **Author Accounts:** Write, publish, and manage books and chapters
-- **Reader Accounts:** Read, bookmark, rate, comment, and follow authors
+- **Reader Accounts:** Read, bookmark, rate, write reviews and comments, follow authors
 - **Social Features:** Follow authors, view follower counts
-- **Engagement:** 1-5 star ratings, comments/reviews, bookmarks
+- **Engagement:**
+  - 1-5 star ratings with analytics
+  - Comprehensive review system (title, rating, detailed text, helpful voting)
+  - Comment system for quick feedback
+  - Two-way threaded reply system (authors and readers can reply to each other)
+  - Bookmarks with organized library
 - **Reading History:** Track reading progress, continue reading from last position
+- **Author Analytics:** Review statistics, rating breakdowns, filtering, sorting, reply management
 
 ---
 
@@ -33,10 +39,10 @@ inkspace/
 │   │   ├── index.js   # Health check routes
 │   │   ├── authors.js # Author auth & management
 │   │   ├── readers.js # Reader auth & management
-│   │   ├── books.js   # Book CRUD operations
+│   │   ├── books.js   # Book CRUD operations + review/comment replies (author)
 │   │   ├── chapters.js# Chapter management
 │   │   ├── user.js    # User interactions (legacy)
-│   │   └── interactions.js # Reader interactions (bookmarks, history, follows, ratings)
+│   │   └── interactions.js # Reader interactions (bookmarks, history, follows, ratings, reviews, comments, replies)
 │   ├── middleware/    # Express middleware
 │   │   └── auth.js    # JWT authentication (authors & readers)
 │   └── db/            # Database layer
@@ -47,6 +53,10 @@ inkspace/
 │           ├── books.js
 │           ├── chapters.js
 │           ├── ratings.js
+│           ├── reviews.js        # Review CRUD operations
+│           ├── comments.js       # Comment CRUD operations
+│           ├── reviewReplies.js  # Review threaded replies
+│           ├── commentReplies.js # Comment threaded replies
 │           └── interactions.js
 ├── src/               # Frontend source (bundled by Vite)
 │   ├── main.js        # Application entry point
@@ -54,15 +64,19 @@ inkspace/
 │   │   └── index.js
 │   ├── store/         # State management & API client
 │   │   └── index.js
-│   ├── views/         # Page components (13 files)
+│   ├── views/         # Page components (14 files)
 │   │   ├── home.js
 │   │   ├── authorLogin.js, authorSignup.js, authorDashboard.js
+│   │   ├── bookReviews.js  # Author review analytics page
 │   │   ├── readerLogin.js, readerSignup.js, readerDashboard.js
 │   │   ├── workDetail.js, read.js
 │   │   └── *.js
 │   ├── components/    # Reusable UI components
 │   │   ├── workCard.js
 │   │   ├── ratingStars.js
+│   │   ├── reviewCard.js   # Review display with replies
+│   │   ├── reviewForm.js   # Review creation/editing
+│   │   ├── replyThread.js  # Threaded conversation UI
 │   │   ├── notFound.js
 │   │   └── toast.js
 │   └── utils/         # Utility functions
