@@ -1,56 +1,196 @@
-# Story-Hub (InkSpace)
+# InkSpace (Story-Hub)
 
-Story-Hub is a modern full-stack web application for reading, writing, and discovering stories. It features a robust PostgreSQL database, a secure RESTful API using Express and JWT authentication, and a dynamic single-page application (SPA) frontend.
+InkSpace is a modern, maintainable full-stack web application for reading, writing, and discovering stories. It features a modular architecture with a PostgreSQL database, RESTful API using Express, and a bundled SPA frontend.
 
 ## Key Features
 - **Reader Experience:** Browse trending stories, customize reading themes and font sizes, bookmark chapters, follow authors, and download works as PDFs.
 - **Author Portal:** Secure JWT-based authentication allows authors to publish works using a rich Quill editor, manage drafts, and track reading statistics.
 - **RESTful API:** A fully secured Node.js backend using Express that handles structured interactions with the PostgreSQL database.
 - **Data Security:** Passwords are cryptographically hashed using `bcryptjs`. Mutating API endpoints are protected with strict authorization checks and ownership validation.
-- **Offline Capabilities:** Uses a basic Service Worker (`sw.js`) to provide offline caching and PWA installation.
+- **Offline Capabilities:** Uses a Service Worker (`sw.js`) to provide offline caching and PWA installation.
 
 ## Tech Stack
-- **Frontend:** Vanilla JavaScript, HTML5, CSS (Tailwind styled layout)
-- **Backend:** Node.js, Express.js
+- **Frontend:** Vanilla JavaScript (ES6 modules), Vite bundler, HTML5, CSS (Tailwind)
+- **Backend:** Node.js, Express.js (ES6 modules)
 - **Database:** PostgreSQL (`pg`)
 - **Security:** JSON Web Tokens (JWT), `bcryptjs`
+- **Build System:** Vite for development and production builds
+
+## Project Structure
+
+```
+inkspace/
+├── server/                 # Backend code
+│   ├── index.js           # Main server entry point
+│   ├── routes/            # API route handlers
+│   │   ├── index.js       # Health check routes
+│   │   ├── authors.js     # Author auth & management
+│   │   ├── books.js       # Book CRUD operations
+│   │   ├── chapters.js    # Chapter management
+│   │   └── user.js        # User interactions (follows, bookmarks)
+│   ├── middleware/        # Express middleware
+│   │   └── auth.js        # JWT authentication
+│   └── db/                # Database layer
+│       ├── index.js       # DB connection & initialization
+│       └── models/        # Data access layer
+│           ├── authors.js
+│           ├── books.js
+│           ├── chapters.js
+│           └── interactions.js
+├── src/                   # Frontend source (bundled by Vite)
+│   ├── main.js            # Application entry point
+│   ├── router/            # SPA routing
+│   │   └── index.js
+│   ├── store/             # State management & API client
+│   │   └── index.js
+│   ├── views/             # Page components
+│   │   ├── home.js
+│   │   ├── workDetail.js
+│   │   ├── read.js
+│   │   ├── authorProfile.js
+│   │   ├── authorLogin.js
+│   │   ├── authorDashboard.js
+│   │   ├── addWork.js
+│   │   ├── manageWork.js
+│   │   ├── editChapter.js
+│   │   ├── searchResults.js
+│   │   └── index.js       # View exports
+│   ├── components/        # Reusable UI components
+│   │   ├── workCard.js
+│   │   ├── notFound.js
+│   │   └── toast.js
+│   └── utils/             # Utility functions
+├── public/                # Static assets (served directly)
+│   ├── index.html         # HTML shell
+│   ├── styles.css         # Custom CSS
+│   └── sw.js              # Service Worker
+├── dist/                  # Production build output (generated)
+├── vite.config.js         # Vite bundler configuration
+├── package.json           # Dependencies & scripts
+├── CLAUDE.md              # Development guidelines
+└── README.md              # This file
+```
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js installed
+- Node.js (v16 or higher)
 - A running PostgreSQL instance (e.g., via Docker)
 
 ### Installation & Setup
-1. Clone or navigate to the repository:
-   ```powershell
-   cd D:\B_Projects\Story-Hub
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd inkspace
    ```
-2. Install backend dependencies:
-   ```powershell
+
+2. **Install dependencies:**
+   ```bash
    npm install
    ```
-3. Start a local Postgres database. You can easily do this via Docker:
-   ```powershell
-   docker run --name storyhub-db -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:15
+
+3. **Start a local PostgreSQL database:**
+   ```bash
+   docker run --name storyhub-db \
+     -e POSTGRES_PASSWORD=postgres \
+     -p 5432:5432 -d postgres:15
    ```
-4. Start the server:
-   ```powershell
+
+4. **Development mode (recommended):**
+   ```bash
+   npm run dev
+   ```
+   This starts both the backend server (port 3000) and Vite dev server (port 5173) concurrently.
+   - Backend API: http://localhost:3000
+   - Frontend: http://localhost:5173
+
+5. **Production mode:**
+   ```bash
+   # Build frontend
+   npm run build
+
+   # Start server (serves built files from dist/)
    npm start
    ```
+   Access the app at http://localhost:3000
 
-*Note: The application is configured to automatically create the `storyhub` database and seed it with demo content if it does not already exist. It connects to `postgresql://postgres:postgres@localhost:5432/storyhub` by default. You can override this by setting the `DATABASE_URL` environment variable.*
+### Database Configuration
+
+The application automatically creates the `storyhub` database and seeds it with demo content if it doesn't exist.
+
+Default connection: `postgresql://postgres:postgres@localhost:5432/storyhub`
+
+To use a different database, set the `DATABASE_URL` environment variable:
+```bash
+DATABASE_URL=postgresql://user:pass@host:port/dbname npm start
+```
 
 ### Demo Accounts
-The auto-seeder will initialize the database with two authors. You can use these to test the author portal:
+
+The auto-seeder initializes two author accounts for testing:
 - **elena@inkspace.com** / password
 - **marcus@inkspace.com** / password
 
-## API Highlights
-- `GET /api/books` - Retrieve all published books
-- `POST /api/authors/login` - Authenticate and receive a JWT
-- `POST /api/books` - (Protected) Publish a new book
-- `PUT /api/books/:id/chapters/:idx` - (Protected) Modify an existing chapter
-- `POST /api/follows` - (Protected) Follow an author
+## NPM Scripts
 
-*All protected routes require an `Authorization: Bearer <token>` header to be sent with the request.*
+- `npm run dev` - Start development environment (backend + Vite dev server)
+- `npm run dev:server` - Start backend server only
+- `npm run dev:client` - Start Vite dev server only
+- `npm run build` - Build frontend for production
+- `npm run preview` - Preview production build locally
+- `npm start` - Start production server
+
+## API Overview
+
+### Public Endpoints
+- `GET /api/health` - Health check
+- `GET /api/authors` - List all authors
+- `GET /api/authors/:id` - Get author details
+- `GET /api/books` - List all published books
+- `GET /api/books/:id` - Get book details with chapters
+- `GET /api/books/:id/comments` - Get book comments
+- `POST /api/authors` - Register new author
+- `POST /api/authors/login` - Authenticate and receive JWT
+
+### Protected Endpoints (require Authorization header)
+- `POST /api/books` - Publish a new book
+- `PUT /api/books/:id` - Update book details
+- `DELETE /api/books/:id` - Delete a book
+- `POST /api/books/:id/chapters` - Add new chapter
+- `PUT /api/books/:id/chapters/:idx` - Update chapter
+- `DELETE /api/books/:id/chapters/:idx` - Delete chapter
+- `POST /api/follows` - Follow/unfollow author
+- `POST /api/bookmarks` - Bookmark chapter
+- `POST /api/reading` - Record reading progress
+- `GET /api/users/:id/follows` - Get user's followed authors
+- `GET /api/users/:id/bookmarks` - Get user's bookmarks
+- `GET /api/users/:id/reading` - Get reading history
+
+*All protected routes require an `Authorization: Bearer <token>` header.*
+
+## Development Guidelines
+
+See [CLAUDE.md](./CLAUDE.md) for detailed development guidelines including:
+- Code organization principles
+- API conventions
+- Database patterns
+- Frontend architecture
+- Security best practices
+- Testing standards
+
+## Migration from Legacy Structure
+
+The project has been restructured from a monolithic single-file architecture to a modular system for better maintainability. Legacy files (`app.js`, `server.js`, `db.js`) are kept for reference but are deprecated. All new development should use the new modular structure under `server/` and `src/` directories.
+
+## Contributing
+
+1. Follow the coding guidelines in CLAUDE.md
+2. Use ES6 module syntax (import/export)
+3. Maintain separation of concerns (routes, models, views)
+4. Test both API endpoints and UI functionality
+5. Ensure backwards compatibility with existing data
+
+## License
+
+MIT

@@ -1,0 +1,14 @@
+# DEPRECATED FILES
+
+The following files in the root directory are deprecated and kept for reference only:
+- app.js (1075 lines) - Replaced by modular src/ structure
+- server.js (256 lines) - Replaced by server/index.js and route files
+- db.js (301 lines) - Replaced by server/db/ structure
+
+## New Structure
+All new development should use:
+- Backend: server/ directory (routes, middleware, db models)
+- Frontend: src/ directory (views, components, router, store)
+- Static files: public/ directory
+
+See README.md for complete project structure and setup instructions.

@@ -1,10 +1,15 @@
 {
-  "name": "inkspace-demo",
-  "version": "0.1.0",
-  "description": "InkSpace demo - single-file SPA for reading/writing stories (local/demo use)",
+  "name": "inkspace",
+  "version": "0.2.0",
+  "description": "InkSpace - A modern platform for reading and writing stories",
+  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "serve": "npx http-server -c-1"
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "node server/index.js",
+    "dev:client": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server/index.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -14,6 +19,10 @@
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.10.0",
     "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "vite": "^5.4.21"
   },
   "author": "",
   "license": "MIT"
