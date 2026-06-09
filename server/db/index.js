@@ -199,6 +199,10 @@ async function init() {
       console.log('[DB] Added reader_id column to comments table');
     }
 
+    // Make user_name nullable (used for guests only, authenticated readers use reader_id)
+    await pool.query(`ALTER TABLE comments ALTER COLUMN user_name DROP NOT NULL`);
+    console.log('[DB] Made user_name nullable in comments table');
+
     // Check and add author_reply to reviews
     const reviewsCheck = await pool.query(`
       SELECT column_name
