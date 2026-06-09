@@ -34,7 +34,7 @@ export const router = {
     if (store.currentUser) {
       userMenu.classList.remove('hidden');
       readerMenu.classList.add('hidden');
-      if (readerLoginBtn) readerLoginBtn.classList.add('hidden');
+      if (readerLoginBtn) readerLoginBtn.style.display = 'none';
       document.getElementById('user-name').textContent = store.currentUser.name;
       document.getElementById('user-initial').textContent = store.currentUser.name.charAt(0);
     } else if (store.currentReader) {
@@ -42,8 +42,8 @@ export const router = {
       readerMenu.classList.remove('hidden');
       userMenu.classList.add('hidden');
       if (readerLoginBtn) {
-        readerLoginBtn.classList.add('hidden');
-        console.log('[updateNav] Reader login button hidden');
+        readerLoginBtn.style.display = 'none';
+        console.log('[updateNav] Reader login button hidden with display:none');
       } else {
         console.log('[updateNav] WARNING: readerLoginBtn element not found!');
       }
@@ -53,7 +53,7 @@ export const router = {
       console.log('[updateNav] No one logged in, showing login button');
       userMenu.classList.add('hidden');
       readerMenu.classList.add('hidden');
-      if (readerLoginBtn) readerLoginBtn.classList.remove('hidden');
+      if (readerLoginBtn) readerLoginBtn.style.display = '';
     }
 
     if (['home', 'search'].includes(this.currentPage)) searchContainer.classList.remove('hidden');
