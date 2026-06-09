@@ -330,8 +330,19 @@ export const store = {
 
   // Comments API (enhanced)
   async getCommentsForBook(bookId) {
-    const res = await fetch(`/api/interactions/comments/${bookId}`);
-    return res.json();
+    try {
+      const res = await fetch(`/api/interactions/comments/${bookId}`);
+      if (!res.ok) {
+        console.error(`Failed to fetch comments: ${res.status}`);
+        return [];
+      }
+      const data = await res.json();
+      // Ensure we always return an array
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.error('Error fetching comments:', err);
+      return [];
+    }
   },
 
   async addCommentAsReader(bookId, text) {

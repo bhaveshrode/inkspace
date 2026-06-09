@@ -395,6 +395,11 @@ export async function workDetail(id) {
     try {
       const comments = await store.getCommentsForBook(id);
 
+      // Validate that comments is an array
+      if (!Array.isArray(comments)) {
+        throw new Error('Invalid response from server');
+      }
+
       commentsContainer.innerHTML = '';
 
       // Comment form for logged-in readers
