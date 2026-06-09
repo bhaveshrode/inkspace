@@ -113,4 +113,5 @@ window.router = router;
   await store.init();
   router.checkHash();
   router.render();
+  router.updateNav();
 })();
