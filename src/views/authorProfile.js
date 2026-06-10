@@ -60,7 +60,7 @@ export async function authorProfile(id) {
     };
   }
 
-  const { totalViews, totalRatings, avgRating } = stats;
+  const { totalViews, totalRatings, averageRating: avgRating } = stats;
 
   const container = document.createElement('div');
   container.className = 'fade-in';
