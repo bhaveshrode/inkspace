@@ -3,6 +3,7 @@
 InkSpace is a modern, maintainable full-stack web application for reading, writing, and discovering stories. It features a modular architecture with a PostgreSQL database, RESTful API using Express, and a bundled SPA frontend.
 
 ## Key Features
+- **Dual Authentication System:** Separate authentication for authors and readers with distinct JWT tokens. Fixed bottom login bar provides clear access to both login options. Prevents dual login (reader + author simultaneously) to avoid session conflicts.
 - **Reader Accounts:** Dedicated reader authentication system with bookmarks, reading history tracking, author following, and 1-5 star ratings. Readers can write detailed reviews, post comments on stories, and manage their personal reading library.
 - **Reviews & Comments System:**
   - Readers can write comprehensive reviews with title, rating (1-5 stars), and detailed text (50-2000 characters)
