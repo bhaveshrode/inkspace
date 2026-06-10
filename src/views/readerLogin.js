@@ -54,6 +54,13 @@ export async function readerLogin() {
   const form = container.querySelector('#reader-login-form');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // Check if author is already logged in
+    if (store.currentUser) {
+      showToast('Please logout from author account first', 'error');
+      return;
+    }
+
     const email = container.querySelector('#email').value;
     const password = container.querySelector('#password').value;
 

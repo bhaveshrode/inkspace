@@ -27,23 +27,34 @@ export const router = {
     const readerLoginBtn = document.getElementById('reader-login-btn');
     const searchContainer = document.getElementById('nav-search-container');
     const notificationBell = document.getElementById('notification-bell');
+    const loginAccessBar = document.getElementById('login-access-bar');
+    const mainContent = document.getElementById('app');
 
     if (store.currentUser) {
+      // Author is logged in
       userMenu.classList.remove('hidden');
       readerMenu.classList.add('hidden');
-      if (readerLoginBtn) readerLoginBtn.style.display = 'none';
+      if (readerLoginBtn) readerLoginBtn.classList.add('hidden');
+      if (loginAccessBar) loginAccessBar.classList.add('hidden');
+      if (mainContent) mainContent.style.paddingBottom = '0';
       document.getElementById('user-name').textContent = store.currentUser.name;
       document.getElementById('user-initial').textContent = store.currentUser.name.charAt(0);
     } else if (store.currentReader) {
+      // Reader is logged in
       readerMenu.classList.remove('hidden');
       userMenu.classList.add('hidden');
-      if (readerLoginBtn) readerLoginBtn.style.display = 'none';
+      if (readerLoginBtn) readerLoginBtn.classList.add('hidden');
+      if (loginAccessBar) loginAccessBar.classList.add('hidden');
+      if (mainContent) mainContent.style.paddingBottom = '0';
       document.getElementById('reader-name').textContent = store.currentReader.name;
       document.getElementById('reader-initial').textContent = store.currentReader.name.charAt(0);
     } else {
+      // No one is logged in - show both login options
       userMenu.classList.add('hidden');
       readerMenu.classList.add('hidden');
-      if (readerLoginBtn) readerLoginBtn.style.display = '';
+      if (readerLoginBtn) readerLoginBtn.classList.remove('hidden');
+      if (loginAccessBar) loginAccessBar.classList.remove('hidden');
+      if (mainContent) mainContent.style.paddingBottom = '4rem';
     }
 
     if (store.currentUser || store.currentReader) {
