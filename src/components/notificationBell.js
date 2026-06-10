@@ -110,7 +110,9 @@ export function NotificationBell() {
       <div
         class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-b-0 cursor-pointer ${notif.read ? 'opacity-60' : ''}"
         data-notification-id="${notif.id}"
+        data-notification='${JSON.stringify(notif)}'
         data-unread="${!notif.read}"
+        title="Click to view"
       >
         <div class="flex items-start gap-3">
           <div class="flex-shrink-0 mt-1">
@@ -128,17 +130,106 @@ export function NotificationBell() {
 
     // Add click handlers to notifications
     list.querySelectorAll('[data-notification-id]').forEach(item => {
-      item.addEventListener('click', async () => {
+      item.addEventListener('click', async (e) => {
         const notifId = item.dataset.notificationId;
         const isUnread = item.dataset.unread === 'true';
+        const notif = JSON.parse(item.dataset.notification);
 
         if (isUnread) {
           await store.markNotificationAsRead(notifId);
         }
 
         dropdown.classList.add('hidden');
+        navigateToNotification(notif);
       });
     });
+  }
+
+  function navigateToNotification(notif) {
+    // Navigate based on notification type and available data
+    switch (notif.type) {
+      case 'new_follower':
+        // Navigate to author profile who followed
+        if (notif.reader_id) {
+          router.navigate('author-profile', {id: notif.author_id || store.currentUser?.id});
+        }
+        break;
+
+      case 'new_rating':
+        // Navigate to book detail page - ratings section
+        if (notif.book_id) {
+          router.navigate('work-detail', {id: notif.book_id});
+          // Scroll to ratings section after navigation
+          setTimeout(() => {
+            const ratingsSection = document.getElementById('ratings-section');
+            if (ratingsSection) {
+              ratingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 100);
+        }
+        break;
+
+      case 'new_comment':
+        // Navigate to book detail page - comments section
+        if (notif.book_id) {
+          router.navigate('work-detail', {id: notif.book_id});
+          // Switch to comments tab and scroll after navigation
+          setTimeout(() => {
+            const commentsTab = document.getElementById('tab-comments');
+            if (commentsTab) {
+              commentsTab.click();
+              setTimeout(() => {
+                const commentsSection = document.getElementById('comments-section');
+                if (commentsSection) {
+                  commentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }, 50);
+            }
+          }, 150);
+        }
+        break;
+
+      case 'comment_reply':
+        // Navigate to book detail page - comments section
+        if (notif.book_id) {
+          router.navigate('work-detail', {id: notif.book_id});
+          setTimeout(() => {
+            const commentsTab = document.getElementById('tab-comments');
+            if (commentsTab) {
+              commentsTab.click();
+              setTimeout(() => {
+                const commentsSection = document.getElementById('comments-section');
+                if (commentsSection) {
+                  commentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }, 50);
+            }
+          }, 150);
+        }
+        break;
+
+      case 'new_chapter':
+        // Navigate to the new chapter's reading page
+        if (notif.book_id) {
+          // If we have chapter_id, we could navigate directly to it
+          // For now, navigate to book detail where they can see latest chapter
+          router.navigate('work-detail', {id: notif.book_id});
+        }
+        break;
+
+      case 'milestone':
+        // Navigate to book detail or author dashboard
+        if (notif.book_id) {
+          router.navigate('work-detail', {id: notif.book_id});
+        } else if (store.currentUser) {
+          router.navigate('author-dashboard');
+        }
+        break;
+
+      default:
+        // Default: navigate to home
+        router.navigate('home');
+    }
   }
 
   function getNotificationIcon(type) {

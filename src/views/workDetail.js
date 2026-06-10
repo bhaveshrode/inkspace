@@ -55,7 +55,7 @@ export async function workDetail(id) {
             <span><i class="fa-solid fa-book mr-1"></i>${work.chapters.length} chapters</span>
           </div>
 
-          <div id="rating-section" class="flex items-center gap-4 mb-6 pb-6 border-b border-slate-200 dark:border-slate-700">
+          <div id="ratings-section" class="flex items-center gap-4 mb-6 pb-6 border-b border-slate-200 dark:border-slate-700">
             <div id="average-rating-display"></div>
             ${store.currentReader ? '<div id="user-rating-display"></div>' : '<p class="text-sm text-slate-500 dark:text-slate-400"><a href="#" id="reader-login-link" class="text-indigo-600 hover:underline">Login</a> to rate this book</p>'}
           </div>
@@ -106,7 +106,7 @@ export async function workDetail(id) {
           </div>
 
           <div id="tab-content-comments" class="tab-content hidden">
-            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Comments</h2>
+            <h2 id="comments-section" class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Comments</h2>
             <div id="comments-container">Loading comments...</div>
           </div>
         </div>
