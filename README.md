@@ -18,6 +18,17 @@ InkSpace is a modern, maintainable full-stack web application for reading, writi
   - Book Reviews page with filtering (by star rating) and sorting (newest, oldest, highest/lowest rating, most helpful)
   - Recent comments section in dashboard with reply functionality
   - Rating analytics view showing all ratings for each book
+- **Professional Author Profiles:**
+  - Banner image with gradient overlay for visual appeal
+  - Large circular avatar with verified badge (1000+ followers)
+  - Comprehensive statistics: total works, followers, total reads, weighted average rating
+  - Dynamic achievement badges: Popular Author (1000+ followers), Prolific Writer (10+ works), Highly Rated (4.5+ stars), Best Seller (100k+ views)
+  - Social media integration: Website, Twitter, Instagram, Facebook, LinkedIn, GitHub links
+  - Recent activity section with activity status indicator (Very Active/Active/Moderately Active/Inactive)
+  - Publishing frequency tracking and last 3 published works display
+  - Profile editing modal for authors to update bio, avatar, banner, location, and social links
+  - Follow/unfollow button for readers with real-time follower count updates
+  - Published works grid with cover images and ratings
 - **Real-time Notifications:**
   - Database-driven notification system with 30-second polling
   - Notification bell with unread count badge
@@ -205,6 +216,8 @@ The auto-seeder initializes demo accounts for testing:
 - `POST /api/readers/login` - Authenticate and receive JWT (token: ink_reader_token)
 
 ### Protected Author Endpoints (require Authorization: Bearer <ink_token>)
+- `PUT /api/authors/profile` - Update author profile (name, bio, avatar, banner, location, website, social links)
+- `GET /api/authors/statistics` - Get author's comprehensive statistics (total works, followers, views, weighted average rating)
 - `POST /api/books` - Publish a new book
 - `PUT /api/books/:id` - Update book details
 - `DELETE /api/books/:id` - Delete a book
