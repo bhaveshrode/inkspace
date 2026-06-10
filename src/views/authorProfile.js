@@ -49,23 +49,24 @@ export async function authorProfile(id) {
               ${author.followers > 1000 ? '<i class="fas fa-check-circle text-indigo-500 text-xl ml-2" title="Verified Author"></i>' : ''}
             </h1>
 
-            <div class="flex flex-wrap items-center gap-4 text-slate-600 dark:text-slate-400 text-sm mb-3">
-              ${author.location ? `<div class="flex items-center gap-1"><i class="fas fa-map-marker-alt"></i> ${author.location}</div>` : ''}
-              <div class="flex items-center gap-1">
+            ${author.location ? `<div class="flex items-center gap-1 text-slate-600 dark:text-slate-400 text-sm mb-3"><i class="fas fa-map-marker-alt"></i> ${author.location}</div>` : ''}
+
+            <!-- Follow Button and Join Date -->
+            <div class="flex flex-wrap items-center gap-3">
+              <button
+                id="follow-btn"
+                class="px-6 py-2 rounded-lg font-medium transition-all ${store.currentReader ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 cursor-not-allowed'}"
+                ${!store.currentReader ? 'disabled' : ''}
+              >
+                <i class="fas fa-user-plus mr-2"></i>
+                Follow
+              </button>
+
+              <div class="flex items-center gap-1 text-slate-600 dark:text-slate-400 text-sm">
                 <i class="fas fa-calendar-alt"></i>
-                Joined ${new Date(author.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                <span>Joined ${new Date(author.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
               </div>
             </div>
-
-            <!-- Follow Button -->
-            <button
-              id="follow-btn"
-              class="px-6 py-2 rounded-lg font-medium transition-all ${store.currentReader ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 cursor-not-allowed'}"
-              ${!store.currentReader ? 'disabled' : ''}
-            >
-              <i class="fas fa-user-plus mr-2"></i>
-              Follow
-            </button>
           </div>
         </div>
       </div>
@@ -164,17 +165,23 @@ export async function authorProfile(id) {
                 <span class="font-bold text-slate-900 dark:text-white">${totalViews.toLocaleString()}</span>
               </div>
 
-              ${avgRating > 0 ? `
+              ${authorWorks.length > 0 ? `
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star text-yellow-500"></i>
                     <span>Avg Rating</span>
                   </div>
-                  <span class="font-bold text-slate-900 dark:text-white">${avgRating.toFixed(1)}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-slate-900 dark:text-white">${avgRating > 0 ? avgRating.toFixed(1) : 'No ratings yet'}</span>
+                    ${avgRating > 0 ? `<span class="text-xs text-slate-500 dark:text-slate-400">(${totalRatings} ratings)</span>` : ''}
+                  </div>
                 </div>
               ` : ''}
             </div>
           </div>
+
+          <!-- Recent Activity Card -->
+          ${getRecentActivityCard(authorWorks)}
 
           <!-- Achievements Card -->
           ${getAchievementBadges(author, authorWorks, totalViews, avgRating)}
@@ -190,6 +197,78 @@ export async function authorProfile(id) {
   setupFollowButton(container, author.id);
 
   return container;
+}
+
+function getRecentActivityCard(works) {
+  if (works.length === 0) return '';
+
+  // Sort works by created_at to find recent publications
+  const recentWorks = [...works]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 3);
+
+  // Calculate days since last publication
+  const lastPublished = recentWorks[0];
+  const daysSinceLastPublish = Math.floor((Date.now() - new Date(lastPublished.createdAt)) / (1000 * 60 * 60 * 24));
+
+  let activityStatus = '';
+  let statusColor = '';
+  if (daysSinceLastPublish < 7) {
+    activityStatus = 'Very Active';
+    statusColor = 'text-green-600 dark:text-green-400';
+  } else if (daysSinceLastPublish < 30) {
+    activityStatus = 'Active';
+    statusColor = 'text-blue-600 dark:text-blue-400';
+  } else if (daysSinceLastPublish < 90) {
+    activityStatus = 'Moderately Active';
+    statusColor = 'text-yellow-600 dark:text-yellow-400';
+  } else {
+    activityStatus = 'Inactive';
+    statusColor = 'text-slate-500 dark:text-slate-400';
+  }
+
+  return `
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-slate-900 dark:text-white">Activity</h3>
+        <span class="text-xs font-semibold px-2 py-1 rounded-full ${statusColor} bg-opacity-10">
+          ${activityStatus}
+        </span>
+      </div>
+
+      <div class="space-y-3">
+        ${recentWorks.map(work => {
+          const daysAgo = Math.floor((Date.now() - new Date(work.createdAt)) / (1000 * 60 * 60 * 24));
+          const timeAgo = daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo} days ago`;
+
+          return `
+            <div class="flex items-start gap-3 pb-3 border-b border-slate-100 dark:border-slate-700 last:border-b-0 last:pb-0">
+              <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                <i class="fas fa-book text-indigo-600 dark:text-indigo-400 text-sm"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-slate-900 dark:text-white truncate">
+                  Published "${work.title}"
+                </p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  ${timeAgo}
+                </p>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      ${daysSinceLastPublish < 30 ? `
+        <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+          <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+            <i class="fas fa-fire text-orange-500"></i>
+            <span>Published ${recentWorks.length} ${recentWorks.length === 1 ? 'work' : 'works'} in the last 30 days</span>
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
 }
 
 function getAchievementBadges(author, works, totalViews, avgRating) {
