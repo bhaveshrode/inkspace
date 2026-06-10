@@ -9,6 +9,7 @@ import * as commentRepliesModel from '../db/models/commentReplies.js';
 import * as notifications from '../db/models/notifications.js';
 import { getReaderById } from '../db/models/readers.js';
 import { getBookById } from '../db/models/books.js';
+import { getAuthorById } from '../db/models/authors.js';
 
 const router = express.Router();
 
@@ -369,6 +370,21 @@ router.post('/comments', authenticateReader, async (req, res) => {
     });
 
     console.log('[POST /comments] Success:', comment.id);
+
+    // Create notification for the book's author
+    const book = await getBookById(bookId);
+    const reader = await getReaderById(req.reader.id);
+
+    await notifications.createNotification({
+      recipientId: book.author_id,
+      recipientType: 'author',
+      type: 'new_comment',
+      title: 'New Comment',
+      message: `${reader.name} commented on "${book.title}"`,
+      bookId: book.id,
+      readerId: req.reader.id
+    });
+
     res.json(comment);
   } catch (err) {
     console.error('[POST /comments] Error:', err.message);
@@ -436,6 +452,41 @@ router.post('/reviews/:reviewId/replies', authenticateReader, async (req, res) =
     );
 
     console.log('[POST /reviews/:reviewId/replies] Success:', reply.id);
+
+    // Get the original review to find who to notify
+    const review = await reviewsModel.getReviewById(req.params.reviewId);
+
+    if (review && review.book_id) {
+      const book = await getBookById(review.book_id);
+      const reader = await getReaderById(req.reader.id);
+
+      // If replying to another reader's review, notify that reader
+      if (review.reader_id && review.reader_id !== req.reader.id) {
+        await notifications.createNotification({
+          recipientId: review.reader_id,
+          recipientType: 'reader',
+          type: 'comment_reply',
+          title: 'New Reply',
+          message: `${reader.name} replied to your review of "${book.title}"`,
+          bookId: book.id,
+          readerId: req.reader.id
+        });
+      }
+
+      // Also notify the book's author
+      if (book.author_id) {
+        await notifications.createNotification({
+          recipientId: book.author_id,
+          recipientType: 'author',
+          type: 'comment_reply',
+          title: 'New Reply',
+          message: `${reader.name} replied to a review of "${book.title}"`,
+          bookId: book.id,
+          readerId: req.reader.id
+        });
+      }
+    }
+
     res.json(reply);
   } catch (err) {
     console.error('[POST /reviews/:reviewId/replies] Error:', err.message);
@@ -507,6 +558,41 @@ router.post('/comments/:commentId/replies', authenticateReader, async (req, res)
     );
 
     console.log('[POST /comments/:commentId/replies] Success:', reply.id);
+
+    // Get the original comment to find who to notify
+    const comment = await commentsModel.getCommentById(req.params.commentId);
+
+    if (comment && comment.book_id) {
+      const book = await getBookById(comment.book_id);
+      const reader = await getReaderById(req.reader.id);
+
+      // If replying to reader's comment, notify that reader
+      if (comment.reader_id && comment.reader_id !== req.reader.id) {
+        await notifications.createNotification({
+          recipientId: comment.reader_id,
+          recipientType: 'reader',
+          type: 'comment_reply',
+          title: 'New Reply',
+          message: `${reader.name} replied to your comment on "${book.title}"`,
+          bookId: book.id,
+          readerId: req.reader.id
+        });
+      }
+
+      // Also notify the book's author (for their awareness)
+      if (book.author_id) {
+        await notifications.createNotification({
+          recipientId: book.author_id,
+          recipientType: 'author',
+          type: 'comment_reply',
+          title: 'New Reply',
+          message: `${reader.name} replied to a comment on "${book.title}"`,
+          bookId: book.id,
+          readerId: req.reader.id
+        });
+      }
+    }
+
     res.json(reply);
   } catch (err) {
     console.error('[POST /comments/:commentId/replies] Error:', err.message);

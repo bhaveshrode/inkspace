@@ -146,6 +146,7 @@ export function NotificationBell() {
       new_follower: '<i class="fas fa-user-plus text-green-500"></i>',
       new_rating: '<i class="fas fa-star text-yellow-500"></i>',
       new_comment: '<i class="fas fa-comment text-blue-500"></i>',
+      comment_reply: '<i class="fas fa-reply text-blue-500"></i>',
       new_chapter: '<i class="fas fa-book-open text-purple-500"></i>',
       milestone: '<i class="fas fa-trophy text-orange-500"></i>',
     };

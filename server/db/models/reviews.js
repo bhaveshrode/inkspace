@@ -1,6 +1,31 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getPool } from '../index.js';
 
+// Get a single review by ID
+export async function getReviewById(reviewId) {
+  const pool = getPool();
+  const res = await pool.query(`
+    SELECT
+      r.id,
+      r.book_id,
+      r.rating,
+      r.title,
+      r.review_text,
+      r.helpful_count,
+      r.author_reply,
+      r.author_reply_at,
+      r.created_at,
+      r.updated_at,
+      rd.id as reader_id,
+      rd.name as reader_name,
+      rd.avatar as reader_avatar
+    FROM reviews r
+    JOIN readers rd ON r.reader_id = rd.id
+    WHERE r.id = $1
+  `, [reviewId]);
+  return res.rows[0] || null;
+}
+
 // Get all reviews for a book with reader details
 export async function getReviewsByBookId(bookId) {
   const pool = getPool();

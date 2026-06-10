@@ -491,10 +491,9 @@ export const store = {
   // Notification methods
   async fetchNotifications(limit = 20, offset = 0) {
     try {
-      const token = this.currentUser ? localStorage.getItem('ink_token') : localStorage.getItem('ink_reader_token');
-      if (!token) return [];
-
-      const data = await this.apiFetch(`/api/notifications?limit=${limit}&offset=${offset}`);
+      // Use the appropriate fetch method based on who's logged in
+      const fetchMethod = this.currentReader ? this.readerApiFetch.bind(this) : this.apiFetch.bind(this);
+      const data = await fetchMethod(`/api/notifications?limit=${limit}&offset=${offset}`);
       this.notifications = data;
       return data;
     } catch (err) {
@@ -505,10 +504,8 @@ export const store = {
 
   async fetchUnreadCount() {
     try {
-      const token = this.currentUser ? localStorage.getItem('ink_token') : localStorage.getItem('ink_reader_token');
-      if (!token) return;
-
-      const data = await this.apiFetch('/api/notifications/unread-count');
+      const fetchMethod = this.currentReader ? this.readerApiFetch.bind(this) : this.apiFetch.bind(this);
+      const data = await fetchMethod('/api/notifications/unread-count');
       this.unreadNotificationCount = data.count;
       this.updateNotificationBadge();
     } catch (err) {
@@ -518,7 +515,8 @@ export const store = {
 
   async markNotificationAsRead(notificationId) {
     try {
-      await this.apiFetch(`/api/notifications/${notificationId}/read`, {
+      const fetchMethod = this.currentReader ? this.readerApiFetch.bind(this) : this.apiFetch.bind(this);
+      await fetchMethod(`/api/notifications/${notificationId}/read`, {
         method: 'POST'
       });
       await this.fetchUnreadCount();
@@ -530,7 +528,8 @@ export const store = {
 
   async markAllNotificationsAsRead() {
     try {
-      await this.apiFetch('/api/notifications/mark-all-read', {
+      const fetchMethod = this.currentReader ? this.readerApiFetch.bind(this) : this.apiFetch.bind(this);
+      await fetchMethod('/api/notifications/mark-all-read', {
         method: 'POST'
       });
       await this.fetchUnreadCount();
@@ -542,7 +541,8 @@ export const store = {
 
   async deleteNotification(notificationId) {
     try {
-      await this.apiFetch(`/api/notifications/${notificationId}`, {
+      const fetchMethod = this.currentReader ? this.readerApiFetch.bind(this) : this.apiFetch.bind(this);
+      await fetchMethod(`/api/notifications/${notificationId}`, {
         method: 'DELETE'
       });
       await this.fetchNotifications();

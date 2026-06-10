@@ -1,6 +1,27 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getPool } from '../index.js';
 
+// Get a single comment by ID
+export async function getCommentById(commentId) {
+  const pool = getPool();
+  const res = await pool.query(`
+    SELECT
+      c.id,
+      c.book_id,
+      c.text,
+      c.author_reply,
+      c.author_reply_at,
+      c.created_at as date,
+      COALESCE(r.name, c.user_name, 'Guest') as user,
+      r.id as reader_id,
+      r.avatar as avatar
+    FROM comments c
+    LEFT JOIN readers r ON c.reader_id = r.id
+    WHERE c.id = $1
+  `, [commentId]);
+  return res.rows[0] || null;
+}
+
 // Get all comments for a book
 export async function getCommentsByBookId(bookId) {
   const pool = getPool();

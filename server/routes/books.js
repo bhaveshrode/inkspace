@@ -7,6 +7,9 @@ import * as reviewsModel from '../db/models/reviews.js';
 import * as commentsModel from '../db/models/comments.js';
 import * as reviewRepliesModel from '../db/models/reviewReplies.js';
 import * as commentRepliesModel from '../db/models/commentReplies.js';
+import { getAuthorById } from '../db/models/authors.js';
+import { createNotification } from '../db/models/notifications.js';
+import { getReaderById } from '../db/models/readers.js';
 
 const router = express.Router();
 
@@ -301,6 +304,24 @@ router.post('/:id/reviews/:reviewId/replies', authenticate, async (req, res) => 
     );
 
     console.log('[POST /books/:id/reviews/:reviewId/replies] Success:', reply.id);
+
+    // Get the original review to find the reader who wrote it
+    const review = await reviewsModel.getReviewById(req.params.reviewId);
+
+    if (review && review.reader_id) {
+      const author = await getAuthorById(req.user.id);
+
+      await createNotification({
+        recipientId: review.reader_id,
+        recipientType: 'reader',
+        type: 'comment_reply',
+        title: 'Author Replied',
+        message: `${author.name} replied to your review of "${book.title}"`,
+        bookId: book.id,
+        authorId: req.user.id
+      });
+    }
+
     res.json(reply);
   } catch (err) {
     console.error('[POST /books/:id/reviews/:reviewId/replies] Error:', err.message);
@@ -377,6 +398,23 @@ router.post('/:id/comments/:commentId/replies', authenticate, async (req, res) =
     );
 
     console.log('[POST /books/:id/comments/:commentId/replies] Success:', reply.id);
+
+    // Get the original comment to find the reader who wrote it
+    const comment = await commentsModel.getCommentById(req.params.commentId);
+    if (comment && comment.reader_id) {
+      const author = await getAuthorById(req.user.id);
+
+      await createNotification({
+        recipientId: comment.reader_id,
+        recipientType: 'reader',
+        type: 'comment_reply',
+        title: 'Author Replied',
+        message: `${author.name} replied to your comment on "${book.title}"`,
+        bookId: book.id,
+        authorId: req.user.id
+      });
+    }
+
     res.json(reply);
   } catch (err) {
     console.error('[POST /books/:id/comments/:commentId/replies] Error:', err.message);
