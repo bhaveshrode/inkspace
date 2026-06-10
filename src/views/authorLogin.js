@@ -39,6 +39,9 @@ export async function authorLogin() {
       store.saveLocal();
       showToast('Welcome back!', 'success');
       router.navigate('author-dashboard');
+      if (window.initializeNotificationBell) {
+        window.initializeNotificationBell();
+      }
     } catch (err) {
       showToast(err.message, 'error');
     }

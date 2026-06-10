@@ -124,3 +124,14 @@ export async function hasBookmark(userId, bookId) {
   return res.rows[0] || null;
 }
 
+export async function getAuthorFollowers(authorId) {
+  const pool = getPool();
+  const res = await pool.query(`
+    SELECT r.id, r.name, r.email, r.avatar
+    FROM follows f
+    JOIN readers r ON f.follower_id = r.id
+    WHERE f.author_id = $1
+  `, [authorId]);
+  return res.rows;
+}
+

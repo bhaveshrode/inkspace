@@ -77,6 +77,9 @@ export async function readerSignup() {
       await store.readerSignup({ name, email, password, bio, avatar });
       showToast('Account created successfully!');
       router.navigate('reader-dashboard');
+      if (window.initializeNotificationBell) {
+        window.initializeNotificationBell();
+      }
     } catch (err) {
       showToast(err.message, 'error');
     }

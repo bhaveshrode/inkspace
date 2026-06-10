@@ -1,6 +1,7 @@
 import { store } from './store/index.js';
 import { router } from './router/index.js';
 import { showToast } from './components/toast.js';
+import { NotificationBell } from './components/notificationBell.js';
 
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
@@ -53,6 +54,7 @@ window.logout = function () {
   store.currentUser = null;
   localStorage.removeItem('ink_token');
   store.saveLocal();
+  store.stopNotificationPolling();
   showToast('Logged out', 'success');
   router.navigate('home');
 };
@@ -61,6 +63,7 @@ window.readerLogout = function () {
   store.currentReader = null;
   localStorage.removeItem('ink_reader_token');
   store.saveLocal();
+  store.stopNotificationPolling();
   showToast('Logged out', 'success');
   router.navigate('home');
 };
@@ -113,10 +116,28 @@ window.viewBookRatings = function (bookId) {
 // Make router globally available
 window.router = router;
 
+// Initialize notification bell
+function initializeNotificationBell() {
+  const bellContainer = document.getElementById('notification-bell');
+  if (bellContainer && (store.currentUser || store.currentReader)) {
+    bellContainer.innerHTML = '';
+    bellContainer.appendChild(NotificationBell());
+    bellContainer.classList.remove('hidden');
+    store.startNotificationPolling();
+  } else if (bellContainer) {
+    bellContainer.classList.add('hidden');
+    store.stopNotificationPolling();
+  }
+}
+
+// Make notification initialization globally available
+window.initializeNotificationBell = initializeNotificationBell;
+
 // Initialize app
 (async () => {
   await store.init();
   router.checkHash();
   router.render();
   router.updateNav();
+  initializeNotificationBell();
 })();

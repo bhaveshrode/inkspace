@@ -7,6 +7,9 @@ export const store = {
   follows: [],
   bookmarks: [],
   readingHistory: [],
+  notifications: [],
+  unreadNotificationCount: 0,
+  notificationPollingInterval: null,
 
   saveLocal() {
     localStorage.setItem('ink_lists', JSON.stringify(this.lists));
@@ -482,6 +485,110 @@ export const store = {
       });
     } else {
       throw new Error('Not authenticated');
+    }
+  },
+
+  // Notification methods
+  async fetchNotifications(limit = 20, offset = 0) {
+    try {
+      const token = this.currentUser ? localStorage.getItem('ink_token') : localStorage.getItem('ink_reader_token');
+      if (!token) return [];
+
+      const data = await this.apiFetch(`/api/notifications?limit=${limit}&offset=${offset}`);
+      this.notifications = data;
+      return data;
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+      return [];
+    }
+  },
+
+  async fetchUnreadCount() {
+    try {
+      const token = this.currentUser ? localStorage.getItem('ink_token') : localStorage.getItem('ink_reader_token');
+      if (!token) return;
+
+      const data = await this.apiFetch('/api/notifications/unread-count');
+      this.unreadNotificationCount = data.count;
+      this.updateNotificationBadge();
+    } catch (err) {
+      console.error('Failed to fetch unread count:', err);
+    }
+  },
+
+  async markNotificationAsRead(notificationId) {
+    try {
+      await this.apiFetch(`/api/notifications/${notificationId}/read`, {
+        method: 'POST'
+      });
+      await this.fetchUnreadCount();
+      await this.fetchNotifications();
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
+  },
+
+  async markAllNotificationsAsRead() {
+    try {
+      await this.apiFetch('/api/notifications/mark-all-read', {
+        method: 'POST'
+      });
+      await this.fetchUnreadCount();
+      await this.fetchNotifications();
+    } catch (err) {
+      console.error('Failed to mark all notifications as read:', err);
+    }
+  },
+
+  async deleteNotification(notificationId) {
+    try {
+      await this.apiFetch(`/api/notifications/${notificationId}`, {
+        method: 'DELETE'
+      });
+      await this.fetchNotifications();
+      await this.fetchUnreadCount();
+    } catch (err) {
+      console.error('Failed to delete notification:', err);
+    }
+  },
+
+  startNotificationPolling() {
+    // Clear any existing interval
+    if (this.notificationPollingInterval) {
+      clearInterval(this.notificationPollingInterval);
+    }
+
+    // Only poll if user is logged in
+    if (this.currentUser || this.currentReader) {
+      // Fetch immediately
+      this.fetchUnreadCount();
+
+      // Then poll every 30 seconds
+      this.notificationPollingInterval = setInterval(() => {
+        if (this.currentUser || this.currentReader) {
+          this.fetchUnreadCount();
+        } else {
+          this.stopNotificationPolling();
+        }
+      }, 30000); // 30 seconds
+    }
+  },
+
+  stopNotificationPolling() {
+    if (this.notificationPollingInterval) {
+      clearInterval(this.notificationPollingInterval);
+      this.notificationPollingInterval = null;
+    }
+    this.unreadNotificationCount = 0;
+    this.notifications = [];
+    this.updateNotificationBadge();
+  },
+
+  updateNotificationBadge() {
+    const badge = document.getElementById('notification-badge');
+    if (badge) {
+      badge.textContent = this.unreadNotificationCount;
+      badge.classList.toggle('hidden', this.unreadNotificationCount === 0);
     }
   }
 };

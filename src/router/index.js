@@ -26,6 +26,7 @@ export const router = {
     const readerMenu = document.getElementById('reader-menu');
     const readerLoginBtn = document.getElementById('reader-login-btn');
     const searchContainer = document.getElementById('nav-search-container');
+    const notificationBell = document.getElementById('notification-bell');
 
     if (store.currentUser) {
       userMenu.classList.remove('hidden');
@@ -43,6 +44,16 @@ export const router = {
       userMenu.classList.add('hidden');
       readerMenu.classList.add('hidden');
       if (readerLoginBtn) readerLoginBtn.style.display = '';
+    }
+
+    if (store.currentUser || store.currentReader) {
+      if (notificationBell) {
+        notificationBell.classList.remove('hidden');
+      }
+    } else {
+      if (notificationBell) {
+        notificationBell.classList.add('hidden');
+      }
     }
 
     if (['home', 'search'].includes(this.currentPage)) searchContainer.classList.remove('hidden');

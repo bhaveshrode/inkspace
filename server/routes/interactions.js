@@ -6,6 +6,9 @@ import * as reviewsModel from '../db/models/reviews.js';
 import * as commentsModel from '../db/models/comments.js';
 import * as reviewRepliesModel from '../db/models/reviewReplies.js';
 import * as commentRepliesModel from '../db/models/commentReplies.js';
+import * as notifications from '../db/models/notifications.js';
+import { getReaderById } from '../db/models/readers.js';
+import { getBookById } from '../db/models/books.js';
 
 const router = express.Router();
 
@@ -89,6 +92,20 @@ router.post('/follow/:authorId', authenticateReader, async (req, res) => {
 
     const result = await interactionsModel.toggleFollow(req.reader.id, authorId);
     console.log('[POST /follow] Success:', result);
+
+    // Create notification when following (not unfollowing)
+    if (result) {
+      const reader = await getReaderById(req.reader.id);
+      await notifications.createNotification({
+        recipientId: authorId,
+        recipientType: 'author',
+        type: 'new_follower',
+        title: 'New Follower',
+        message: `${reader.name} started following you`,
+        readerId: req.reader.id
+      });
+    }
+
     res.json({ following: result });
   } catch (err) {
     console.error('[POST /follow] Error:', err.message);
@@ -151,8 +168,28 @@ router.post('/ratings', authenticateReader, async (req, res) => {
     if (!bookId || !rating) return res.status(400).json({ error: 'Missing fields' });
     if (rating < 1 || rating > 5) return res.status(400).json({ error: 'Rating must be between 1 and 5' });
 
+    // Check if this is a new rating or an update
+    const existingRating = await ratingsModel.getUserRating(req.reader.id, bookId);
     const result = await ratingsModel.createOrUpdateRating(req.reader.id, bookId, rating);
     console.log('[POST /ratings] Success');
+
+    // Create notification only for new ratings (not updates)
+    if (!existingRating) {
+      const book = await getBookById(bookId);
+      const reader = await getReaderById(req.reader.id);
+      if (book && reader) {
+        await notifications.createNotification({
+          recipientId: book.author_id,
+          recipientType: 'author',
+          type: 'new_rating',
+          title: 'New Rating',
+          message: `${reader.name} rated "${book.title}" ${rating} stars`,
+          bookId: bookId,
+          readerId: req.reader.id
+        });
+      }
+    }
+
     res.json(result);
   } catch (err) {
     console.error('[POST /ratings] Error:', err.message);

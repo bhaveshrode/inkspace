@@ -206,6 +206,27 @@ async function init() {
     FOREIGN KEY(comment_id) REFERENCES comments(id) ON DELETE CASCADE
   );`);
 
+  // Create notifications table
+  await pool.query(`CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    recipient_id TEXT NOT NULL,
+    recipient_type TEXT NOT NULL CHECK (recipient_type IN ('reader', 'author')),
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    book_id TEXT,
+    chapter_id TEXT,
+    author_id TEXT,
+    reader_id TEXT,
+    read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE,
+    FOREIGN KEY(author_id) REFERENCES authors(id) ON DELETE CASCADE,
+    FOREIGN KEY(reader_id) REFERENCES readers(id) ON DELETE CASCADE
+  );`);
+
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_id, recipient_type, read, created_at DESC);`);
+
   // Migrations: Add columns if they don't exist in existing databases
   try {
     // Check and add reader_id to comments if missing

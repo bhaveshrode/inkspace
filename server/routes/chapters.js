@@ -2,6 +2,9 @@ import express from 'express';
 import { authenticate } from '../middleware/auth.js';
 import * as booksModel from '../db/models/books.js';
 import * as chaptersModel from '../db/models/chapters.js';
+import * as notifications from '../db/models/notifications.js';
+import * as interactionsModel from '../db/models/interactions.js';
+import { getAuthorById } from '../db/models/authors.js';
 
 const router = express.Router();
 
@@ -15,6 +18,24 @@ router.post('/:id/chapters', authenticate, async (req, res) => {
     const { title, content } = req.body;
     if (!title || !content) return res.status(400).json({ error: 'Missing fields' });
     const chap = await chaptersModel.createChapter(req.params.id, { title, content });
+
+    // Notify all followers about the new chapter
+    const author = await getAuthorById(req.user.id);
+    const followers = await interactionsModel.getAuthorFollowers(req.user.id);
+
+    for (const follower of followers) {
+      await notifications.createNotification({
+        recipientId: follower.id,
+        recipientType: 'reader',
+        type: 'new_chapter',
+        title: 'New Chapter Published',
+        message: `${author.name} published a new chapter in "${b.title}"`,
+        bookId: b.id,
+        chapterId: chap.id,
+        authorId: author.id
+      });
+    }
+
     res.json(chap);
   } catch (err) {
     console.error(err);

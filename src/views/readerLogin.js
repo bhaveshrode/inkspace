@@ -61,6 +61,9 @@ export async function readerLogin() {
       await store.readerLogin({ email, password });
       showToast('Welcome back!');
       router.navigate('reader-dashboard');
+      if (window.initializeNotificationBell) {
+        window.initializeNotificationBell();
+      }
     } catch (err) {
       showToast(err.message, 'error');
     }
