@@ -8,12 +8,59 @@ export async function authorProfile(id) {
   const works = await store.getWorks();
   const authorWorks = works.filter(w => w.authorId === id);
 
-  // Calculate statistics
-  const totalViews = authorWorks.reduce((sum, work) => sum + (work.views || 0), 0);
-  const totalRatings = authorWorks.reduce((sum, work) => sum + (work.ratingCount || 0), 0);
-  const avgRating = authorWorks.length > 0
-    ? authorWorks.reduce((sum, work) => sum + (work.averageRating || 0), 0) / authorWorks.length
-    : 0;
+  // Fetch statistics from backend (same as Author Dashboard)
+  let stats = { totalRatings: 0, averageRating: 0, totalViews: 0 };
+  try {
+    // Temporarily set currentUser for the API call if viewing own profile
+    const isOwnProfile = store.currentUser && store.currentUser.id === id;
+    if (isOwnProfile) {
+      stats = await store.getAuthorStatistics();
+    } else {
+      // For other authors, manually calculate from work data
+      const totalViews = authorWorks.reduce((sum, work) => sum + (work.views || 0), 0);
+      const totalRatings = authorWorks.reduce((sum, work) => sum + (work.ratingCount || 0), 0);
+
+      // Calculate weighted average rating
+      let totalRatingSum = 0;
+      let totalRatingCount = 0;
+      for (const work of authorWorks) {
+        if (work.averageRating && work.ratingCount) {
+          totalRatingSum += work.averageRating * work.ratingCount;
+          totalRatingCount += work.ratingCount;
+        }
+      }
+      const avgRating = totalRatingCount > 0 ? totalRatingSum / totalRatingCount : 0;
+
+      stats = {
+        totalRatings,
+        averageRating: avgRating,
+        totalViews
+      };
+    }
+  } catch (e) {
+    console.error('Failed to load author statistics:', e);
+    // Fallback to manual calculation
+    const totalViews = authorWorks.reduce((sum, work) => sum + (work.views || 0), 0);
+    const totalRatings = authorWorks.reduce((sum, work) => sum + (work.ratingCount || 0), 0);
+
+    let totalRatingSum = 0;
+    let totalRatingCount = 0;
+    for (const work of authorWorks) {
+      if (work.averageRating && work.ratingCount) {
+        totalRatingSum += work.averageRating * work.ratingCount;
+        totalRatingCount += work.ratingCount;
+      }
+    }
+    const avgRating = totalRatingCount > 0 ? totalRatingSum / totalRatingCount : 0;
+
+    stats = {
+      totalRatings,
+      averageRating: avgRating,
+      totalViews
+    };
+  }
+
+  const { totalViews, totalRatings, avgRating } = stats;
 
   const container = document.createElement('div');
   container.className = 'fade-in';
