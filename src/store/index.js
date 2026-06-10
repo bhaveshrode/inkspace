@@ -114,6 +114,15 @@ export const store = {
   async signup(name, email, password) {
     return this.apiFetch('/api/authors', { method: 'POST', body: JSON.stringify({ name, email, password }) });
   },
+  async updateAuthorProfile(profileData) {
+    const data = await this.apiFetch('/api/authors/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData)
+    });
+    this.currentUser = { ...this.currentUser, ...data };
+    this.saveLocal();
+    return data;
+  },
 
   _mapWork(w) {
     return w ? { ...w, authorId: w.author_id, createdAt: w.created_at } : null;

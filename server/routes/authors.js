@@ -1,7 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { authenticate, JWT_SECRET } from '../middleware/auth.js';
-import * as authorsModel from '../db/models/authors.js';
+import { getAuthors, getAuthorById, getAuthorByEmail, createAuthor, verifyPassword, updateAuthorProfile } from '../db/models/authors.js';
 import * as ratingsModel from '../db/models/ratings.js';
 import * as reviewsModel from '../db/models/reviews.js';
 import * as commentsModel from '../db/models/comments.js';
@@ -11,7 +11,7 @@ const router = express.Router();
 // Get all authors
 router.get('/', async (req, res) => {
   try {
-    const authors = await authorsModel.getAuthors();
+    const authors = await getAuthors();
     res.json(authors);
   } catch (err) {
     console.error(err);
@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 // Get author by ID
 router.get('/:id', async (req, res) => {
   try {
-    const a = await authorsModel.getAuthorById(req.params.id);
+    const a = await getAuthorById(req.params.id);
     if (!a) return res.status(404).json({ error: 'Author not found' });
     res.json(a);
   } catch (err) {
@@ -36,9 +36,9 @@ router.post('/', async (req, res) => {
   try {
     const { name, email, password, bio, avatar } = req.body;
     if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
-    const exists = await authorsModel.getAuthorByEmail(email);
+    const exists = await getAuthorByEmail(email);
     if (exists) return res.status(409).json({ error: 'Email exists' });
-    const newAuthor = await authorsModel.createAuthor({ name, email, password, bio, avatar });
+    const newAuthor = await createAuthor({ name, email, password, bio, avatar });
     const token = jwt.sign({ id: newAuthor.id, email: newAuthor.email, name: newAuthor.name }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ user: newAuthor, token });
   } catch (err) {
@@ -52,9 +52,9 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
-    const user = await authorsModel.getAuthorByEmail(email);
+    const user = await getAuthorByEmail(email);
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-    const ok = authorsModel.verifyPassword(password, user.password_hash);
+    const ok = verifyPassword(password, user.password_hash);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
 
     // return user without password hash
@@ -64,6 +64,19 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update author profile (protected)
+router.put('/profile', authenticate, async (req, res) => {
+  try {
+    const updatedAuthor = await updateAuthorProfile(req.user.id, req.body);
+    // Remove password_hash from response
+    delete updatedAuthor.password_hash;
+    res.json(updatedAuthor);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 });
 

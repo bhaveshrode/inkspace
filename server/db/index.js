@@ -56,6 +56,14 @@ async function init() {
     password_hash TEXT NOT NULL,
     bio TEXT,
     avatar TEXT,
+    banner TEXT,
+    location TEXT,
+    website TEXT,
+    twitter TEXT,
+    instagram TEXT,
+    facebook TEXT,
+    linkedin TEXT,
+    github TEXT,
     followers INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
   );`);
@@ -270,6 +278,21 @@ async function init() {
       await pool.query(`ALTER TABLE comments ADD COLUMN author_reply TEXT`);
       await pool.query(`ALTER TABLE comments ADD COLUMN author_reply_at TIMESTAMP WITH TIME ZONE`);
       console.log('[DB] Added author_reply columns to comments table');
+    }
+
+    // Add new author profile fields if they don't exist
+    const authorProfileFields = ['banner', 'location', 'website', 'twitter', 'instagram', 'facebook', 'linkedin', 'github'];
+    for (const field of authorProfileFields) {
+      const check = await pool.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name='authors' AND column_name='${field}'
+      `);
+
+      if (check.rows.length === 0) {
+        await pool.query(`ALTER TABLE authors ADD COLUMN ${field} TEXT`);
+        console.log(`[DB] Added ${field} column to authors table`);
+      }
     }
 
     console.log('[DB] Migrations applied successfully');

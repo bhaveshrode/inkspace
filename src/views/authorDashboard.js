@@ -36,10 +36,16 @@ export async function authorDashboard() {
   container.innerHTML = `
     <div class="mb-6 flex justify-between items-center">
       <h1 class="text-3xl font-bold">My Dashboard</h1>
-      <button onclick="router.navigate('add-work')"
-              class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-        <i class="fa-solid fa-plus mr-2"></i>New Work
-      </button>
+      <div class="flex gap-2">
+        <button onclick="window.openProfileEditor()"
+                class="bg-slate-600 text-white px-4 py-2 rounded hover:bg-slate-700">
+          <i class="fa-solid fa-user-edit mr-2"></i>Edit Profile
+        </button>
+        <button onclick="router.navigate('add-work')"
+                class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+          <i class="fa-solid fa-plus mr-2"></i>New Work
+        </button>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -258,3 +264,136 @@ export async function authorDashboard() {
 
   return container;
 }
+
+function openProfileEditor() {
+  // Create modal with profile edit form
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
+  modal.innerHTML = `
+    <div class="bg-white dark:bg-slate-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Edit Profile</h2>
+        <button id="close-modal" class="text-slate-400 hover:text-slate-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <form id="profile-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input type="text" name="name" value="${store.currentUser.name}"
+                 class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Bio</label>
+          <textarea name="bio" rows="4"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                    maxlength="500">${store.currentUser.bio || ''}</textarea>
+          <p class="text-xs text-slate-500 mt-1">Max 500 characters</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Avatar URL</label>
+          <input type="url" name="avatar" value="${store.currentUser.avatar || ''}"
+                 class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                 placeholder="https://example.com/avatar.jpg">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Banner URL</label>
+          <input type="url" name="banner" value="${store.currentUser.banner || ''}"
+                 class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                 placeholder="https://example.com/banner.jpg">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location</label>
+          <input type="text" name="location" value="${store.currentUser.location || ''}"
+                 class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                 placeholder="City, Country">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Website</label>
+          <input type="url" name="website" value="${store.currentUser.website || ''}"
+                 class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                 placeholder="https://yourwebsite.com">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Twitter</label>
+            <input type="text" name="twitter" value="${store.currentUser.twitter || ''}"
+                   class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                   placeholder="@username or URL">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Instagram</label>
+            <input type="text" name="instagram" value="${store.currentUser.instagram || ''}"
+                   class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                   placeholder="@username or URL">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">LinkedIn</label>
+            <input type="text" name="linkedin" value="${store.currentUser.linkedin || ''}"
+                   class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                   placeholder="Profile URL">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">GitHub</label>
+            <input type="text" name="github" value="${store.currentUser.github || ''}"
+                   class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                   placeholder="@username or URL">
+          </div>
+        </div>
+
+        <div class="flex gap-3 pt-4">
+          <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">
+            Save Changes
+          </button>
+          <button type="button" id="cancel-btn" class="px-6 py-3 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Close handlers
+  modal.querySelector('#close-modal').addEventListener('click', () => modal.remove());
+  modal.querySelector('#cancel-btn').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+
+  // Form submit
+  modal.querySelector('#profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+
+    try {
+      await store.updateAuthorProfile(data);
+      modal.remove();
+      if (window.showToast) {
+        window.showToast('Profile updated successfully', 'success');
+      }
+      // Reload page to show updates
+      window.location.reload();
+    } catch (err) {
+      console.error('Profile update error:', err);
+      if (window.showToast) {
+        window.showToast('Failed to update profile', 'error');
+      }
+    }
+  });
+}
+
+// Export for use in dashboard
+window.openProfileEditor = openProfileEditor;

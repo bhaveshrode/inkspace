@@ -8,30 +8,305 @@ export async function authorProfile(id) {
   const works = await store.getWorks();
   const authorWorks = works.filter(w => w.authorId === id);
 
+  // Calculate statistics
+  const totalViews = authorWorks.reduce((sum, work) => sum + (work.views || 0), 0);
+  const totalRatings = authorWorks.reduce((sum, work) => sum + (work.ratingCount || 0), 0);
+  const avgRating = authorWorks.length > 0
+    ? authorWorks.reduce((sum, work) => sum + (work.averageRating || 0), 0) / authorWorks.length
+    : 0;
+
   const container = document.createElement('div');
-  container.className = 'fade-in max-w-4xl mx-auto px-4 py-8';
+  container.className = 'fade-in';
+
+  // Default banner if none set
+  const bannerUrl = author.banner || 'https://images.unsplash.com/photo-1516979187457-637abb4f9353?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80';
+  const avatarUrl = author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&size=200&background=6366f1&color=fff`;
 
   container.innerHTML = `
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-8">
-      <div class="flex items-center gap-4 mb-6">
-        <img src="${author.avatar}" class="w-24 h-24 rounded-full">
-        <div>
-          <h1 class="text-3xl font-bold">${author.name}</h1>
-          <p class="text-slate-600">${author.bio || 'Author'}</p>
+    <!-- Banner Section -->
+    <div class="relative h-64 md:h-80 bg-gradient-to-r from-indigo-500 to-purple-600 overflow-hidden">
+      <img src="${bannerUrl}" alt="Profile banner" class="w-full h-full object-cover" onerror="this.style.display='none'">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Avatar & Basic Info -->
+      <div class="relative -mt-20 sm:-mt-24 mb-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+          <!-- Avatar -->
+          <img
+            src="${avatarUrl}"
+            alt="${author.name}"
+            class="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-white dark:border-slate-900 shadow-xl bg-white"
+            onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&size=200&background=6366f1&color=fff'"
+          >
+
+          <!-- Name & Stats -->
+          <div class="flex-1 sm:ml-4 sm:pb-4">
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-2">
+              ${author.name}
+              ${author.followers > 1000 ? '<i class="fas fa-check-circle text-indigo-500 text-xl ml-2" title="Verified Author"></i>' : ''}
+            </h1>
+
+            <div class="flex flex-wrap items-center gap-4 text-slate-600 dark:text-slate-400 text-sm mb-3">
+              ${author.location ? `<div class="flex items-center gap-1"><i class="fas fa-map-marker-alt"></i> ${author.location}</div>` : ''}
+              <div class="flex items-center gap-1">
+                <i class="fas fa-calendar-alt"></i>
+                Joined ${new Date(author.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+              </div>
+            </div>
+
+            <!-- Follow Button -->
+            <button
+              id="follow-btn"
+              class="px-6 py-2 rounded-lg font-medium transition-all ${store.currentReader ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 cursor-not-allowed'}"
+              ${!store.currentReader ? 'disabled' : ''}
+            >
+              <i class="fas fa-user-plus mr-2"></i>
+              Follow
+            </button>
+          </div>
         </div>
       </div>
-      <h2 class="text-xl font-bold mb-4">Works (${authorWorks.length})</h2>
-      <div class="grid gap-4">
-        ${authorWorks.map(w => `
-          <div class="border rounded p-4 cursor-pointer hover:bg-slate-50"
-               onclick="router.navigate('work-detail', {id: '${w.id}'})">
-            <h3 class="font-bold">${w.title}</h3>
-            <p class="text-sm text-slate-600">${w.description}</p>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content (Left Column - 2/3) -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Bio Section -->
+          ${author.bio ? `
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+              <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">About</h2>
+              <p class="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">${author.bio}</p>
+            </div>
+          ` : ''}
+
+          <!-- Published Works -->
+          <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
+              Published Works (${authorWorks.length})
+            </h2>
+
+            ${authorWorks.length === 0 ? `
+              <div class="text-center py-12 text-slate-500 dark:text-slate-400">
+                <i class="fas fa-book-open text-4xl mb-3"></i>
+                <p>No published works yet</p>
+              </div>
+            ` : `
+              <div class="grid gap-4">
+                ${authorWorks.map(work => `
+                  <div
+                    class="group flex gap-4 p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md transition-all cursor-pointer"
+                    onclick="router.navigate('work-detail/${work.id}')"
+                  >
+                    ${work.cover ? `
+                      <img
+                        src="${work.cover}"
+                        alt="${work.title}"
+                        class="w-20 h-28 object-cover rounded-lg shadow-sm"
+                      >
+                    ` : ''}
+                    <div class="flex-1 min-w-0">
+                      <h3 class="font-bold text-lg text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 mb-1 truncate">
+                        ${work.title}
+                      </h3>
+                      <p class="text-sm text-slate-600 dark:text-slate-400 mb-2 line-clamp-2">
+                        ${work.description || 'No description'}
+                      </p>
+                      <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-500">
+                        ${work.genre ? `<span class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-full">${work.genre}</span>` : ''}
+                        ${work.averageRating ? `
+                          <div class="flex items-center gap-1">
+                            <i class="fas fa-star text-yellow-500"></i>
+                            <span>${work.averageRating.toFixed(1)}</span>
+                          </div>
+                        ` : ''}
+                        <div class="flex items-center gap-1">
+                          <i class="fas fa-eye"></i>
+                          <span>${work.views || 0} views</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
+        </div>
+
+        <!-- Sidebar (Right Column - 1/3) -->
+        <div class="space-y-6">
+          <!-- Statistics Card -->
+          <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+            <h3 class="font-bold text-slate-900 dark:text-white mb-4">Statistics</h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <i class="fas fa-book"></i>
+                  <span>Works</span>
+                </div>
+                <span class="font-bold text-slate-900 dark:text-white">${authorWorks.length}</span>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <i class="fas fa-users"></i>
+                  <span>Followers</span>
+                </div>
+                <span class="font-bold text-slate-900 dark:text-white">${author.followers || 0}</span>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <i class="fas fa-eye"></i>
+                  <span>Total Reads</span>
+                </div>
+                <span class="font-bold text-slate-900 dark:text-white">${totalViews.toLocaleString()}</span>
+              </div>
+
+              ${avgRating > 0 ? `
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <i class="fas fa-star"></i>
+                    <span>Avg Rating</span>
+                  </div>
+                  <span class="font-bold text-slate-900 dark:text-white">${avgRating.toFixed(1)}</span>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Achievements Card -->
+          ${getAchievementBadges(author, authorWorks, totalViews, avgRating)}
+
+          <!-- Social Links Card -->
+          ${getSocialLinksCard(author)}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add follow button logic
+  setupFollowButton(container, author.id);
+
+  return container;
+}
+
+function getAchievementBadges(author, works, totalViews, avgRating) {
+  const badges = [];
+
+  if (author.followers >= 1000) {
+    badges.push({ icon: 'fa-fire', color: 'text-orange-500', label: 'Popular Author', desc: '1000+ followers' });
+  }
+  if (works.length >= 10) {
+    badges.push({ icon: 'fa-pen-fancy', color: 'text-purple-500', label: 'Prolific Writer', desc: '10+ books' });
+  }
+  if (avgRating >= 4.5 && works.length >= 3) {
+    badges.push({ icon: 'fa-crown', color: 'text-yellow-500', label: 'Highly Rated', desc: '4.5+ average' });
+  }
+  if (totalViews >= 10000) {
+    badges.push({ icon: 'fa-trophy', color: 'text-blue-500', label: 'Best Seller', desc: '10K+ reads' });
+  }
+
+  if (badges.length === 0) return '';
+
+  return `
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+      <h3 class="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+        <i class="fas fa-award text-indigo-500"></i>
+        Achievements
+      </h3>
+      <div class="space-y-3">
+        ${badges.map(badge => `
+          <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+            <i class="fas ${badge.icon} ${badge.color} text-2xl"></i>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-slate-900 dark:text-white text-sm">${badge.label}</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">${badge.desc}</div>
+            </div>
           </div>
         `).join('')}
       </div>
     </div>
   `;
+}
 
-  return container;
+function getSocialLinksCard(author) {
+  const links = [
+    { key: 'website', icon: 'fa-globe', label: 'Website', url: author.website },
+    { key: 'twitter', icon: 'fa-twitter', label: 'Twitter', url: author.twitter },
+    { key: 'instagram', icon: 'fa-instagram', label: 'Instagram', url: author.instagram },
+    { key: 'facebook', icon: 'fa-facebook', label: 'Facebook', url: author.facebook },
+    { key: 'linkedin', icon: 'fa-linkedin', label: 'LinkedIn', url: author.linkedin },
+    { key: 'github', icon: 'fa-github', label: 'GitHub', url: author.github }
+  ].filter(link => link.url);
+
+  if (links.length === 0) return '';
+
+  return `
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+      <h3 class="font-bold text-slate-900 dark:text-white mb-4">Connect</h3>
+      <div class="space-y-2">
+        ${links.map(link => `
+          <a
+            href="${link.url.startsWith('http') ? link.url : 'https://' + link.url}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group"
+          >
+            <i class="fab ${link.icon} text-slate-400 group-hover:text-indigo-500 text-xl"></i>
+            <span class="text-slate-700 dark:text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+              ${link.label}
+            </span>
+            <i class="fas fa-external-link-alt text-slate-400 text-xs ml-auto"></i>
+          </a>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+async function setupFollowButton(container, authorId) {
+  const followBtn = container.querySelector('#follow-btn');
+  if (!followBtn || !store.currentReader) return;
+
+  try {
+    // Check if following
+    const isFollowing = await store.isFollowingAuthor(authorId);
+    updateFollowButton(followBtn, isFollowing);
+
+    followBtn.addEventListener('click', async () => {
+      try {
+        followBtn.disabled = true;
+        const result = await store.readerToggleFollow(authorId);
+        updateFollowButton(followBtn, result.following);
+
+        // Show toast
+        if (window.showToast) {
+          window.showToast(result.following ? 'Following author' : 'Unfollowed', 'success');
+        }
+      } catch (err) {
+        console.error('Follow error:', err);
+        if (window.showToast) {
+          window.showToast('Failed to update follow status', 'error');
+        }
+      } finally {
+        followBtn.disabled = false;
+      }
+    });
+  } catch (err) {
+    console.error('Setup follow error:', err);
+  }
+}
+
+function updateFollowButton(btn, isFollowing) {
+  if (isFollowing) {
+    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Following';
+    btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+    btn.classList.add('bg-slate-200', 'dark:bg-slate-700', 'hover:bg-slate-300', 'dark:hover:bg-slate-600');
+  } else {
+    btn.innerHTML = '<i class="fas fa-user-plus mr-2"></i>Follow';
+    btn.classList.remove('bg-slate-200', 'dark:bg-slate-700', 'hover:bg-slate-300', 'dark:hover:bg-slate-600');
+    btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'text-white');
+  }
 }
