@@ -18,6 +18,14 @@ InkSpace is a modern, maintainable full-stack web application for reading, writi
   - Book Reviews page with filtering (by star rating) and sorting (newest, oldest, highest/lowest rating, most helpful)
   - Recent comments section in dashboard with reply functionality
   - Rating analytics view showing all ratings for each book
+- **Real-time Notifications:**
+  - Database-driven notification system with 30-second polling
+  - Notification bell with unread count badge
+  - Authors receive notifications for: new followers, new ratings, new comments, comment replies
+  - Readers receive notifications for: new chapters from followed authors, author replies, comment replies
+  - Click-to-navigate: notifications take you directly to relevant content
+  - Automatic tab switching and smooth scrolling to context
+  - Separate notification streams for authors and readers
 - **RESTful API:** A fully secured Node.js backend using Express that handles structured interactions with the PostgreSQL database.
 - **Data Security:** Passwords are cryptographically hashed using `bcryptjs`. Separate JWT tokens for authors and readers. Mutating API endpoints are protected with strict authorization checks and ownership validation.
 - **Offline Capabilities:** Uses a Service Worker (`sw.js`) to provide offline caching and PWA installation.
@@ -43,7 +51,8 @@ inkspace/
 │   │   ├── books.js       # Book CRUD operations (includes review/comment replies)
 │   │   ├── chapters.js    # Chapter management
 │   │   ├── user.js        # User interactions (follows, bookmarks)
-│   │   └── interactions.js # Reader interactions (bookmarks, history, follows, ratings, reviews, comments, replies)
+│   │   ├── interactions.js # Reader interactions (bookmarks, history, follows, ratings, reviews, comments, replies)
+│   │   └── notifications.js # Notification system routes
 │   ├── middleware/        # Express middleware
 │   │   └── auth.js        # JWT authentication
 │   └── db/                # Database layer
@@ -58,6 +67,7 @@ inkspace/
 │           ├── comments.js        # Comment CRUD operations
 │           ├── reviewReplies.js   # Review reply operations
 │           ├── commentReplies.js  # Comment reply operations
+│           ├── notifications.js   # Notification CRUD operations
 │           └── interactions.js
 ├── src/                   # Frontend source (bundled by Vite)
 │   ├── main.js            # Application entry point
@@ -87,6 +97,7 @@ inkspace/
 │   │   ├── reviewCard.js       # Review display with reply functionality
 │   │   ├── reviewForm.js       # Review creation/editing form
 │   │   ├── replyThread.js      # Threaded conversation component
+│   │   ├── notificationBell.js # Notification bell with dropdown
 │   │   ├── notFound.js
 │   │   └── toast.js
 │   └── utils/             # Utility functions (for future use)
@@ -250,6 +261,24 @@ The auto-seeder initializes demo accounts for testing:
 - `DELETE /api/books/:id/reviews/:reviewId/replies/:replyId` - Delete own reply
 - `POST /api/books/:id/comments/:commentId/replies` - Author replies to comment on their book
 - `DELETE /api/books/:id/comments/:commentId/replies/:replyId` - Delete own reply
+
+### Notification Endpoints (Dual Authentication)
+
+These endpoints work for both authors (ink_token) and readers (ink_reader_token):
+
+- `GET /api/notifications` - Get paginated notifications (limit, offset query params)
+- `GET /api/notifications/unread-count` - Get count of unread notifications
+- `POST /api/notifications/:id/read` - Mark single notification as read
+- `POST /api/notifications/mark-all-read` - Mark all notifications as read
+- `DELETE /api/notifications/:id` - Delete a notification
+
+**Notification Types:**
+- `new_follower` - Reader followed author
+- `new_rating` - Reader rated author's book
+- `new_comment` - Reader commented on author's book
+- `comment_reply` - Someone replied to a comment
+- `new_chapter` - Author published new chapter (sent to followers)
+- `milestone` - Achievement notification (future use)
 
 *Note: Authors and readers use separate authentication tokens stored in different localStorage keys.*
 
