@@ -24,7 +24,6 @@ export const router = {
   updateNav() {
     const userMenu = document.getElementById('user-menu');
     const readerMenu = document.getElementById('reader-menu');
-    const readerLoginBtn = document.getElementById('reader-login-btn');
     const searchContainer = document.getElementById('nav-search-container');
     const notificationBell = document.getElementById('notification-bell');
     const loginAccessBar = document.getElementById('login-access-bar');
@@ -34,7 +33,6 @@ export const router = {
       // Author is logged in
       userMenu.classList.remove('hidden');
       readerMenu.classList.add('hidden');
-      if (readerLoginBtn) readerLoginBtn.classList.add('hidden');
       if (loginAccessBar) loginAccessBar.classList.add('hidden');
       if (mainContent) mainContent.style.paddingBottom = '0';
       document.getElementById('user-name').textContent = store.currentUser.name;
@@ -43,16 +41,14 @@ export const router = {
       // Reader is logged in
       readerMenu.classList.remove('hidden');
       userMenu.classList.add('hidden');
-      if (readerLoginBtn) readerLoginBtn.classList.add('hidden');
       if (loginAccessBar) loginAccessBar.classList.add('hidden');
       if (mainContent) mainContent.style.paddingBottom = '0';
       document.getElementById('reader-name').textContent = store.currentReader.name;
       document.getElementById('reader-initial').textContent = store.currentReader.name.charAt(0);
     } else {
-      // No one is logged in - show both login options
+      // No one is logged in - show fixed bottom login bar
       userMenu.classList.add('hidden');
       readerMenu.classList.add('hidden');
-      if (readerLoginBtn) readerLoginBtn.classList.remove('hidden');
       if (loginAccessBar) loginAccessBar.classList.remove('hidden');
       if (mainContent) mainContent.style.paddingBottom = '4rem';
     }
