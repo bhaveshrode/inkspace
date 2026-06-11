@@ -14,7 +14,7 @@ InkSpace is a modern, maintainable full-stack web application for reading, writi
   - Authors can respond from their dashboard or the Book Reviews analytics page
 - **Content Discovery System:**
   - **Trending This Week**: Most read stories with view-based ranking
-  - **Highest Rated**: Books with 4.5+ star ratings and minimum 5 reviews
+  - **Highest Rated**: Books with 4.0+ star ratings and minimum 3 ratings
   - **Recently Updated**: Stories with new chapters published in last 30 days
   - **Completed Stories**: Finished tales ready for binge reading
   - **Most Followed Authors**: Top authors by follower count with book statistics
@@ -198,8 +198,9 @@ The auto-seeder initializes demo accounts for testing:
 - **marcus@inkspace.com** / password
 
 **Reader Accounts:**
-- **reader1@inkspace.com** / password
-- **reader2@inkspace.com** / password
+- **reader1@inkspace.com** / password (Alex Reader)
+- **reader2@inkspace.com** / password (Sam Bookworm)
+- **reader3@inkspace.com** / password (Jordan Pages)
 
 ## NPM Scripts
 
@@ -227,7 +228,7 @@ The auto-seeder initializes demo accounts for testing:
 
 ### Discovery Endpoints (Public)
 - `GET /api/books/discover/trending` - Trending books (most views, top 20)
-- `GET /api/books/discover/highest-rated` - Highest rated books (4.5+ stars, min 5 ratings, top 20)
+- `GET /api/books/discover/highest-rated` - Highest rated books (4.0+ stars, min 3 ratings, top 20)
 - `GET /api/books/discover/recently-updated` - Recently updated books (new chapters in last 30 days, top 20)
 - `GET /api/books/discover/completed` - Completed stories (status='completed', top 20)
 - `GET /api/authors/discover/most-followed` - Most followed authors (by follower count, top 20)
