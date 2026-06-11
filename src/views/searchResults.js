@@ -156,8 +156,11 @@ function createAuthorCard(author) {
 
   card.innerHTML = `
     <div class="flex items-start gap-4">
-      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
-        ${author.name.charAt(0).toUpperCase()}
+      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 overflow-hidden">
+        ${author.avatar
+          ? `<img src="${author.avatar}" alt="${author.name}" class="w-full h-full object-cover" />`
+          : author.name.charAt(0).toUpperCase()
+        }
       </div>
       <div class="flex-1 min-w-0">
         <h3 class="font-semibold text-lg text-slate-900 dark:text-white mb-1">${author.name}</h3>
