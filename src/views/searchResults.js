@@ -245,9 +245,7 @@ function createGenreCard(genre) {
 
     <!-- Books List -->
     <div class="space-y-2 max-h-60 overflow-y-auto">
-      ${genre.books.slice(0, 5).map(book => {
-        console.log('[Genre Card] Book:', book.id, book.title);
-        return `
+      ${genre.books.slice(0, 5).map(book => `
         <div class="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer transition book-item" data-book-id="${book.id}">
           <div class="w-8 h-12 bg-slate-200 dark:bg-slate-700 rounded flex-shrink-0 overflow-hidden">
             ${book.cover ? `<img src="${book.cover}" alt="${book.title}" class="w-full h-full object-cover" />` : ''}
@@ -257,8 +255,7 @@ function createGenreCard(genre) {
             <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${book.authorName || 'Unknown'}</p>
           </div>
         </div>
-      `;
-      }).join('')}
+      `).join('')}
       ${genre.books.length > 5 ? `
         <p class="text-xs text-slate-500 dark:text-slate-400 text-center pt-2">
           +${genre.books.length - 5} more book${genre.books.length - 5 !== 1 ? 's' : ''}
@@ -352,9 +349,7 @@ function createTagCard(tag) {
 
     <!-- Books List -->
     <div class="space-y-2 max-h-60 overflow-y-auto">
-      ${tag.books.slice(0, 5).map(book => {
-        console.log('[Tag Card] Book:', book.id, book.title);
-        return `
+      ${tag.books.slice(0, 5).map(book => `
         <div class="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer transition book-item" data-book-id="${book.id}">
           <div class="w-8 h-12 bg-slate-200 dark:bg-slate-700 rounded flex-shrink-0 overflow-hidden">
             ${book.cover ? `<img src="${book.cover}" alt="${book.title}" class="w-full h-full object-cover" />` : ''}
@@ -364,8 +359,7 @@ function createTagCard(tag) {
             <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${book.authorName || 'Unknown'}</p>
           </div>
         </div>
-      `;
-      }).join('')}
+      `).join('')}
       ${tag.books.length > 5 ? `
         <p class="text-xs text-slate-500 dark:text-slate-400 text-center pt-2">
           +${tag.books.length - 5} more book${tag.books.length - 5 !== 1 ? 's' : ''}
