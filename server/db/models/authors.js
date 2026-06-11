@@ -84,3 +84,88 @@ export async function getMostFollowedAuthors(limit = 20) {
   `, [limit]);
   return res.rows.map(a => ({ ...a, bookCount: parseInt(a.book_count) || 0, totalViews: parseInt(a.total_views) || 0 }));
 }
+
+// Search: Search for authors by name or bio
+export async function searchAuthors(searchOptions = {}) {
+  const pool = getPool();
+  const {
+    query = '',
+    sortBy = 'followers', // followers, books, views
+    limit = 50,
+    offset = 0
+  } = searchOptions;
+
+  let sqlQuery = `
+    SELECT a.id, a.name, a.email, a.bio, a.avatar, a.banner, a.location, a.website,
+           a.twitter, a.instagram, a.facebook, a.linkedin, a.github, a.followers, a.created_at,
+           COUNT(DISTINCT b.id) as book_count,
+           COALESCE(SUM(b.views), 0) as total_views
+    FROM authors a
+    LEFT JOIN books b ON a.id = b.author_id
+    WHERE 1=1
+  `;
+
+  const params = [];
+  let paramCount = 0;
+
+  // Full-text search on name and bio
+  if (query && query.trim()) {
+    paramCount++;
+    const searchTerm = `%${query.trim().toLowerCase()}%`;
+    sqlQuery += ` AND (LOWER(a.name) LIKE $${paramCount} OR LOWER(a.bio) LIKE $${paramCount})`;
+    params.push(searchTerm);
+  }
+
+  sqlQuery += ' GROUP BY a.id';
+
+  // Apply sorting
+  switch (sortBy) {
+    case 'books':
+      sqlQuery += ' ORDER BY COUNT(DISTINCT b.id) DESC';
+      break;
+    case 'views':
+      sqlQuery += ' ORDER BY SUM(b.views) DESC NULLS LAST';
+      break;
+    case 'followers':
+    default:
+      sqlQuery += ' ORDER BY a.followers DESC';
+      break;
+  }
+
+  // Apply pagination
+  paramCount++;
+  sqlQuery += ` LIMIT $${paramCount}`;
+  params.push(parseInt(limit));
+
+  paramCount++;
+  sqlQuery += ` OFFSET $${paramCount}`;
+  params.push(parseInt(offset));
+
+  const res = await pool.query(sqlQuery, params);
+  return res.rows.map(a => ({
+    ...a,
+    bookCount: parseInt(a.book_count) || 0,
+    totalViews: parseInt(a.total_views) || 0
+  }));
+}
+
+// Search: Get total count for author search results
+export async function getAuthorSearchCount(searchOptions = {}) {
+  const pool = getPool();
+  const { query = '' } = searchOptions;
+
+  let sqlQuery = `SELECT COUNT(*) as total FROM authors WHERE 1=1`;
+
+  const params = [];
+  let paramCount = 0;
+
+  if (query && query.trim()) {
+    paramCount++;
+    const searchTerm = `%${query.trim().toLowerCase()}%`;
+    sqlQuery += ` AND (LOWER(name) LIKE $${paramCount} OR LOWER(bio) LIKE $${paramCount})`;
+    params.push(searchTerm);
+  }
+
+  const res = await pool.query(sqlQuery, params);
+  return parseInt(res.rows[0]?.total || 0);
+}

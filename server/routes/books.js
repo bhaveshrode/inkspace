@@ -13,6 +13,38 @@ import { getReaderById } from '../db/models/readers.js';
 
 const router = express.Router();
 
+// Search endpoint - Search books with filters and sorting
+router.get('/search', async (req, res) => {
+  try {
+    const { q, genre, status, minRating, sortBy, limit, offset } = req.query;
+
+    const searchOptions = {
+      query: q || '',
+      genre: genre || '',
+      status: status || '',
+      minRating: minRating ? parseFloat(minRating) : 0,
+      sortBy: sortBy || 'relevance',
+      limit: limit ? parseInt(limit) : 50,
+      offset: offset ? parseInt(offset) : 0
+    };
+
+    const [results, total] = await Promise.all([
+      booksModel.searchBooks(searchOptions),
+      booksModel.getSearchCount(searchOptions)
+    ]);
+
+    res.json({
+      results,
+      total,
+      page: Math.floor(searchOptions.offset / searchOptions.limit) + 1,
+      totalPages: Math.ceil(total / searchOptions.limit)
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Discovery endpoint - Trending this week (most views in last 7 days)
 router.get('/discover/trending', async (req, res) => {
   try {

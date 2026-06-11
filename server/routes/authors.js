@@ -1,12 +1,41 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { authenticate, JWT_SECRET } from '../middleware/auth.js';
-import { getAuthors, getAuthorById, getAuthorByEmail, createAuthor, verifyPassword, updateAuthorProfile } from '../db/models/authors.js';
+import { getAuthors, getAuthorById, getAuthorByEmail, createAuthor, verifyPassword, updateAuthorProfile, searchAuthors, getAuthorSearchCount } from '../db/models/authors.js';
 import * as ratingsModel from '../db/models/ratings.js';
 import * as reviewsModel from '../db/models/reviews.js';
 import * as commentsModel from '../db/models/comments.js';
 
 const router = express.Router();
+
+// Search endpoint - Search authors with sorting
+router.get('/search', async (req, res) => {
+  try {
+    const { q, sortBy, limit, offset } = req.query;
+
+    const searchOptions = {
+      query: q || '',
+      sortBy: sortBy || 'followers',
+      limit: limit ? parseInt(limit) : 50,
+      offset: offset ? parseInt(offset) : 0
+    };
+
+    const [results, total] = await Promise.all([
+      searchAuthors(searchOptions),
+      getAuthorSearchCount(searchOptions)
+    ]);
+
+    res.json({
+      results,
+      total,
+      page: Math.floor(searchOptions.offset / searchOptions.limit) + 1,
+      totalPages: Math.ceil(total / searchOptions.limit)
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 // Discovery endpoint - Most followed authors
 router.get('/discover/most-followed', async (req, res) => {

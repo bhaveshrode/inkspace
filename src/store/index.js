@@ -157,6 +157,41 @@ export const store = {
   async getMostFollowedAuthors() {
     return this.apiFetch('/api/authors/discover/most-followed');
   },
+
+  // Search methods
+  async searchBooks(searchParams = {}) {
+    const { query = '', genre = '', status = '', minRating = 0, sortBy = 'relevance', page = 1, limit = 20 } = searchParams;
+    const offset = (page - 1) * limit;
+
+    const queryParams = new URLSearchParams();
+    if (query) queryParams.append('q', query);
+    if (genre) queryParams.append('genre', genre);
+    if (status) queryParams.append('status', status);
+    if (minRating > 0) queryParams.append('minRating', minRating);
+    if (sortBy) queryParams.append('sortBy', sortBy);
+    queryParams.append('limit', limit);
+    queryParams.append('offset', offset);
+
+    const data = await this.apiFetch(`/api/books/search?${queryParams.toString()}`);
+    return {
+      ...data,
+      results: data.results.map(b => this._mapWork(b))
+    };
+  },
+
+  async searchAuthors(searchParams = {}) {
+    const { query = '', sortBy = 'followers', page = 1, limit = 20 } = searchParams;
+    const offset = (page - 1) * limit;
+
+    const queryParams = new URLSearchParams();
+    if (query) queryParams.append('q', query);
+    if (sortBy) queryParams.append('sortBy', sortBy);
+    queryParams.append('limit', limit);
+    queryParams.append('offset', offset);
+
+    return this.apiFetch(`/api/authors/search?${queryParams.toString()}`);
+  },
+
   async createWork(work) {
     const created = await this.apiFetch('/api/books', { method: 'POST', body: JSON.stringify(work) });
     return this._mapWork(created);

@@ -176,3 +176,164 @@ export async function addComment(bookId, { readerId = null, user = null, text })
   return result.rows[0];
 }
 
+// Search: Full-text search for books with filters and sorting
+export async function searchBooks(searchOptions = {}) {
+  const pool = getPool();
+  const {
+    query = '',
+    genre = '',
+    status = '',
+    minRating = 0,
+    sortBy = 'relevance', // relevance, rating, views, newest
+    limit = 50,
+    offset = 0
+  } = searchOptions;
+
+  let sqlQuery = `
+    SELECT DISTINCT b.id, b.author_id, b.title, b.genre, b.series, b.tags, b.cover, b.description, b.status, b.views, b.created_at,
+           COALESCE(AVG(r.rating), 0) as average_rating,
+           COUNT(DISTINCT r.id) as rating_count,
+           a.name as author_name
+    FROM books b
+    LEFT JOIN ratings r ON b.id = r.book_id
+    LEFT JOIN authors a ON b.author_id = a.id
+    WHERE 1=1
+  `;
+
+  const params = [];
+  let paramCount = 0;
+
+  // Full-text search on title, description, genre, series, and tags
+  if (query && query.trim()) {
+    paramCount++;
+    const searchTerm = `%${query.trim().toLowerCase()}%`;
+    sqlQuery += ` AND (
+      LOWER(b.title) LIKE $${paramCount} OR
+      LOWER(b.description) LIKE $${paramCount} OR
+      LOWER(b.genre) LIKE $${paramCount} OR
+      LOWER(b.series) LIKE $${paramCount} OR
+      LOWER(b.tags) LIKE $${paramCount}
+    )`;
+    params.push(searchTerm);
+  }
+
+  // Filter by genre
+  if (genre && genre.trim()) {
+    paramCount++;
+    sqlQuery += ` AND LOWER(b.genre) = $${paramCount}`;
+    params.push(genre.trim().toLowerCase());
+  }
+
+  // Filter by status
+  if (status && status.trim()) {
+    paramCount++;
+    sqlQuery += ` AND b.status = $${paramCount}`;
+    params.push(status.trim());
+  }
+
+  sqlQuery += ' GROUP BY b.id, a.name';
+
+  // Filter by minimum rating (after grouping)
+  if (minRating > 0) {
+    sqlQuery += ` HAVING AVG(r.rating) >= ${minRating}`;
+  }
+
+  // Apply sorting
+  switch (sortBy) {
+    case 'rating':
+      sqlQuery += ' ORDER BY AVG(r.rating) DESC NULLS LAST, b.views DESC';
+      break;
+    case 'views':
+      sqlQuery += ' ORDER BY b.views DESC';
+      break;
+    case 'newest':
+      sqlQuery += ' ORDER BY b.created_at DESC';
+      break;
+    case 'relevance':
+    default:
+      // For relevance, prioritize exact title matches, then views
+      if (query && query.trim()) {
+        sqlQuery += ` ORDER BY
+          CASE WHEN LOWER(b.title) = '${query.trim().toLowerCase()}' THEN 1 ELSE 2 END,
+          b.views DESC
+        `;
+      } else {
+        sqlQuery += ' ORDER BY b.views DESC';
+      }
+      break;
+  }
+
+  // Apply pagination
+  paramCount++;
+  sqlQuery += ` LIMIT $${paramCount}`;
+  params.push(parseInt(limit));
+
+  paramCount++;
+  sqlQuery += ` OFFSET $${paramCount}`;
+  params.push(parseInt(offset));
+
+  const res = await pool.query(sqlQuery, params);
+  return res.rows.map(b => ({
+    ...b,
+    tags: b.tags ? JSON.parse(b.tags) : [],
+    averageRating: parseFloat(b.average_rating) || 0,
+    ratingCount: parseInt(b.rating_count) || 0
+  }));
+}
+
+// Search: Get total count for search results (for pagination)
+export async function getSearchCount(searchOptions = {}) {
+  const pool = getPool();
+  const {
+    query = '',
+    genre = '',
+    status = '',
+    minRating = 0
+  } = searchOptions;
+
+  let sqlQuery = `
+    SELECT COUNT(DISTINCT b.id) as total
+    FROM books b
+    LEFT JOIN ratings r ON b.id = r.book_id
+    WHERE 1=1
+  `;
+
+  const params = [];
+  let paramCount = 0;
+
+  // Full-text search on title, description, genre, series, and tags
+  if (query && query.trim()) {
+    paramCount++;
+    const searchTerm = `%${query.trim().toLowerCase()}%`;
+    sqlQuery += ` AND (
+      LOWER(b.title) LIKE $${paramCount} OR
+      LOWER(b.description) LIKE $${paramCount} OR
+      LOWER(b.genre) LIKE $${paramCount} OR
+      LOWER(b.series) LIKE $${paramCount} OR
+      LOWER(b.tags) LIKE $${paramCount}
+    )`;
+    params.push(searchTerm);
+  }
+
+  // Filter by genre
+  if (genre && genre.trim()) {
+    paramCount++;
+    sqlQuery += ` AND LOWER(b.genre) = $${paramCount}`;
+    params.push(genre.trim().toLowerCase());
+  }
+
+  // Filter by status
+  if (status && status.trim()) {
+    paramCount++;
+    sqlQuery += ` AND b.status = $${paramCount}`;
+    params.push(status.trim());
+  }
+
+  if (minRating > 0) {
+    sqlQuery += ' GROUP BY b.id HAVING AVG(r.rating) >= ' + minRating;
+  }
+
+  const res = await pool.query(sqlQuery, params);
+  return minRating > 0 ? res.rows.length : parseInt(res.rows[0]?.total || 0);
+}
+
