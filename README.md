@@ -21,6 +21,15 @@ InkSpace is a modern, maintainable full-stack web application for reading, writi
   - Parallel data loading for optimal performance
   - Curated home page with multiple discovery sections
   - Visual icons and color coding for each discovery category
+- **Comprehensive Search System:**
+  - **Full-Text Search**: Search books by title, description, genre, series, and tags
+  - **Author Search**: Find authors by name and bio
+  - **Advanced Filters**: Filter books by genre, status (published/completed), minimum rating
+  - **Multiple Sort Options**: Sort by relevance, rating, popularity, or newest
+  - **Paginated Results**: 20 results per page with full pagination controls
+  - **Two-Tab Interface**: Seamlessly switch between book and author search
+  - **Global Search Bar**: Search from anywhere using the navigation search bar
+  - **Real-Time Filtering**: Instant results when changing filters or sort options
 - **Reader Experience:** Browse trending stories, customize reading themes and font sizes, bookmark chapters, follow authors, write reviews and comments with threaded discussions, and download works as PDFs.
 - **Author Portal:** Secure JWT-based authentication allows authors to publish works using a rich Quill editor, manage drafts, track reading statistics, view review analytics, and engage with readers through replies.
 - **Author Analytics:**
@@ -225,6 +234,25 @@ The auto-seeder initializes demo accounts for testing:
 - `POST /api/authors/login` - Authenticate and receive JWT (token: ink_token)
 - `POST /api/readers` - Register new reader
 - `POST /api/readers/login` - Authenticate and receive JWT (token: ink_reader_token)
+
+### Search Endpoints (Public)
+- `GET /api/books/search?q=query&genre=&status=&minRating=&sortBy=&limit=&offset=` - Search books with filters
+  - **Query Params**:
+    - `q` - Search query (searches title, description, genre, series, tags)
+    - `genre` - Filter by genre (e.g., "fantasy", "sci-fi")
+    - `status` - Filter by status ("published" or "completed")
+    - `minRating` - Minimum average rating (0-5)
+    - `sortBy` - Sort order: "relevance", "rating", "views", "newest" (default: "relevance")
+    - `limit` - Results per page (default: 50, max: 50)
+    - `offset` - Pagination offset (default: 0)
+  - **Returns**: `{ results: [...], total: number, page: number, totalPages: number }`
+- `GET /api/authors/search?q=query&sortBy=&limit=&offset=` - Search authors
+  - **Query Params**:
+    - `q` - Search query (searches name and bio)
+    - `sortBy` - Sort order: "followers", "books", "views" (default: "followers")
+    - `limit` - Results per page (default: 50, max: 50)
+    - `offset` - Pagination offset (default: 0)
+  - **Returns**: `{ results: [...], total: number, page: number, totalPages: number }`
 
 ### Discovery Endpoints (Public)
 - `GET /api/books/discover/trending` - Trending books (most views, top 20)
