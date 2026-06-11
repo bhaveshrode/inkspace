@@ -8,6 +8,12 @@ export const router = {
   navigate(page, params = {}) {
     this.currentPage = page;
     this.params = params;
+
+    // Update URL hash with params for shareable/refreshable URLs
+    const queryString = new URLSearchParams(params).toString();
+    const newHash = queryString ? `#${page}?${queryString}` : `#${page}`;
+    window.location.hash = newHash;
+
     window.scrollTo(0, 0);
     this.render();
     this.updateNav();
