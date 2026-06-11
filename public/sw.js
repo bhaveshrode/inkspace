@@ -1,5 +1,5 @@
 // Simple service worker for InkSpace (demo)
-const CACHE_NAME = 'inkspace-v1';
+const CACHE_NAME = 'inkspace-v2';
 const PRECACHE_URLS = [
     '/',
     '/index.html',
