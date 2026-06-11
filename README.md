@@ -12,6 +12,16 @@ InkSpace is a modern, maintainable full-stack web application for reading, writi
   - Comment system for quick feedback on books
   - **Two-way threaded reply system**: Authors and readers can reply to reviews and comments, enabling conversation
   - Authors can respond from their dashboard or the Book Reviews analytics page
+- **Comprehensive Search System:**
+  - **Multi-category search**: Books, Authors, Genres, and Tags with dedicated tabs
+  - **Book Search**: Full-text search across titles and descriptions with cover thumbnails
+  - **Author Search**: Search by author name or bio with profile avatars displayed
+  - **Genre Search**: Browse books grouped by genre with visual genre cards
+  - **Tag Search**: Discover books by tags with expandable book lists
+  - **Real-time filtering**: Instant results as you type with query highlighting
+  - **URL persistence**: Shareable search URLs with query and tab parameters
+  - **Visual polish**: Profile images, book covers, and responsive card layouts
+  - Enter key support and mobile-friendly search interface
 - **Content Discovery System:**
   - **Trending This Week**: Most read stories with view-based ranking
   - **Highest Rated**: Books with 4.0+ star ratings and minimum 3 ratings
@@ -215,10 +225,10 @@ The auto-seeder initializes demo accounts for testing:
 
 ### Public Endpoints
 - `GET /api/health` - Health check
-- `GET /api/authors` - List all authors
+- `GET /api/authors` - List all authors (used for author search with client-side filtering)
 - `GET /api/authors/:id` - Get author details
 - `GET /api/readers/:id` - Get reader profile (public)
-- `GET /api/books` - List all published books (supports filtering: status, sortBy, limit)
+- `GET /api/books` - List all published books (supports filtering: status, sortBy, limit; used for book/genre/tag search with client-side filtering)
 - `GET /api/books/:id` - Get book details with chapters
 - `GET /api/books/:id/comments` - Get book comments
 - `POST /api/authors` - Register new author
