@@ -3,21 +3,24 @@ import { workCard } from '../components/workCard.js';
 import { router } from '../router/index.js';
 
 export async function searchResults(query) {
+  // Ensure query is a string
+  const searchQuery = String(query || '').trim();
+
   const works = await store.getWorks();
   const authors = await store.getAuthors();
   const authMap = {};
   authors.forEach(a => authMap[a.id] = a.name);
 
   const filtered = works.filter(w =>
-    w.title.toLowerCase().includes(query.toLowerCase()) ||
-    w.description.toLowerCase().includes(query.toLowerCase())
+    w.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    w.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const container = document.createElement('div');
   container.className = 'fade-in max-w-7xl mx-auto px-4 py-8';
 
   container.innerHTML = `
-    <h1 class="text-3xl font-bold mb-6">Search Results for "${query}"</h1>
+    <h1 class="text-3xl font-bold mb-6">Search Results for "${searchQuery}"</h1>
     <p class="text-slate-600 mb-6">${filtered.length} results found</p>
   `;
 
