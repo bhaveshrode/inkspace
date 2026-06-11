@@ -314,20 +314,33 @@ async function seed() {
 
   const r1 = uuidv4();
   const r2 = uuidv4();
+  const r3 = uuidv4();
   await pool.query('INSERT INTO readers (id,name,email,password_hash,bio,avatar) VALUES ($1,$2,$3,$4,$5,$6)', [r1, 'Alex Reader', 'reader1@inkspace.com', bcrypt.hashSync('password', 10), 'Book lover', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80']);
   await pool.query('INSERT INTO readers (id,name,email,password_hash,bio,avatar) VALUES ($1,$2,$3,$4,$5,$6)', [r2, 'Sam Bookworm', 'reader2@inkspace.com', bcrypt.hashSync('password', 10), 'Reading enthusiast', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80']);
+  await pool.query('INSERT INTO readers (id,name,email,password_hash,bio,avatar) VALUES ($1,$2,$3,$4,$5,$6)', [r3, 'Jordan Pages', 'reader3@inkspace.com', bcrypt.hashSync('password', 10), 'Story enthusiast', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80']);
 
   const b1 = uuidv4();
   const b2 = uuidv4();
   const b3 = uuidv4();
   await pool.query('INSERT INTO books (id, author_id, title, genre, series, tags, cover, description, status, views, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)', [b1, a1, 'The Last Starlight', 'Sci-Fi', 'Starlight Saga', JSON.stringify(['Space','Adventure','AI']), 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', 'In a galaxy where stars are dying, one pilot must find the source of the darkness.', 'published', 1205, new Date(Date.now() - 86400000 * 2).toISOString()]);
-  await pool.query('INSERT INTO books (id, author_id, title, genre, series, tags, cover, description, status, views, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)', [b2, a2, 'Neon Dreams', 'Cyberpunk', '', JSON.stringify(['Future','Dystopia','Hacking']), 'https://images.unsplash.com/photo-1515630278258-407f66498911?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', 'In 2084, dreams are currency.', 'published', 850, new Date().toISOString()]);
+  await pool.query('INSERT INTO books (id, author_id, title, genre, series, tags, cover, description, status, views, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)', [b2, a2, 'Neon Dreams', 'Cyberpunk', '', JSON.stringify(['Future','Dystopia','Hacking']), 'https://images.unsplash.com/photo-1515630278258-407f66498911?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', 'In 2084, dreams are currency.', 'completed', 850, new Date().toISOString()]);
   await pool.query('INSERT INTO books (id, author_id, title, genre, series, tags, cover, description, status, views, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)', [b3, a1, 'Shadows of the Old World', 'Fantasy', '', JSON.stringify(['Magic','Dragons']), 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', 'Ancient magic awakens.', 'published', 2300, new Date(Date.now() - 86400000 * 5).toISOString()]);
 
   await pool.query('INSERT INTO chapters (id, book_id, idx, title, content) VALUES ($1,$2,$3,$4,$5)', [uuidv4(), b1, 0, 'Prologue', 'The sky was bleeding. Not the red of sunset...']);
   await pool.query('INSERT INTO chapters (id, book_id, idx, title, content) VALUES ($1,$2,$3,$4,$5)', [uuidv4(), b1, 1, 'Chapter 1', 'Commander Vane stood before the map...']);
   await pool.query('INSERT INTO chapters (id, book_id, idx, title, content) VALUES ($1,$2,$3,$4,$5)', [uuidv4(), b2, 0, 'The Dream Market', 'Sarah plugged the cable into her temple...']);
   await pool.query('INSERT INTO chapters (id, book_id, idx, title, content) VALUES ($1,$2,$3,$4,$5)', [uuidv4(), b3, 0, 'The Awakening', 'The subway trembled...']);
+
+  // Add sample ratings so discovery features work (need min 3 ratings per book for "Highest Rated")
+  await pool.query('INSERT INTO ratings (id, reader_id, book_id, rating) VALUES ($1,$2,$3,$4)', [uuidv4(), r1, b1, 5]);
+  await pool.query('INSERT INTO ratings (id, reader_id, book_id, rating) VALUES ($1,$2,$3,$4)', [uuidv4(), r2, b1, 4]);
+  await pool.query('INSERT INTO ratings (id, reader_id, book_id, rating) VALUES ($1,$2,$3,$4)', [uuidv4(), r3, b1, 5]);
+  await pool.query('INSERT INTO ratings (id, reader_id, book_id, rating) VALUES ($1,$2,$3,$4)', [uuidv4(), r1, b2, 5]);
+  await pool.query('INSERT INTO ratings (id, reader_id, book_id, rating) VALUES ($1,$2,$3,$4)', [uuidv4(), r2, b2, 5]);
+  await pool.query('INSERT INTO ratings (id, reader_id, book_id, rating) VALUES ($1,$2,$3,$4)', [uuidv4(), r3, b2, 4]);
+  await pool.query('INSERT INTO ratings (id, reader_id, book_id, rating) VALUES ($1,$2,$3,$4)', [uuidv4(), r1, b3, 4]);
+  await pool.query('INSERT INTO ratings (id, reader_id, book_id, rating) VALUES ($1,$2,$3,$4)', [uuidv4(), r2, b3, 5]);
+  await pool.query('INSERT INTO ratings (id, reader_id, book_id, rating) VALUES ($1,$2,$3,$4)', [uuidv4(), r3, b3, 5]);
 }
 
 // Initialize immediately

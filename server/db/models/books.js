@@ -54,7 +54,7 @@ export async function getTrendingBooks(days = 7, limit = 20) {
   return res.rows.map(b => ({ ...b, tags: b.tags ? JSON.parse(b.tags) : [], averageRating: parseFloat(b.average_rating) || 0, ratingCount: parseInt(b.rating_count) || 0 }));
 }
 
-// Discovery: Highest rated books (avg >= 4.5, min 5 ratings)
+// Discovery: Highest rated books (avg >= 4.0, min 3 ratings)
 export async function getHighestRatedBooks(limit = 20) {
   const pool = getPool();
   const res = await pool.query(`
@@ -65,7 +65,7 @@ export async function getHighestRatedBooks(limit = 20) {
     INNER JOIN ratings r ON b.id = r.book_id
     WHERE b.status = 'published'
     GROUP BY b.id
-    HAVING COUNT(r.id) >= 5 AND AVG(r.rating) >= 4.5
+    HAVING COUNT(r.id) >= 3 AND AVG(r.rating) >= 4.0
     ORDER BY AVG(r.rating) DESC, COUNT(r.id) DESC
     LIMIT $1
   `, [limit]);
