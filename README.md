@@ -12,6 +12,15 @@ InkSpace is a modern, maintainable full-stack web application for reading, writi
   - Comment system for quick feedback on books
   - **Two-way threaded reply system**: Authors and readers can reply to reviews and comments, enabling conversation
   - Authors can respond from their dashboard or the Book Reviews analytics page
+- **Content Discovery System:**
+  - **Trending This Week**: Most read stories with view-based ranking
+  - **Highest Rated**: Books with 4.5+ star ratings and minimum 5 reviews
+  - **Recently Updated**: Stories with new chapters published in last 30 days
+  - **Completed Stories**: Finished tales ready for binge reading
+  - **Most Followed Authors**: Top authors by follower count with book statistics
+  - Parallel data loading for optimal performance
+  - Curated home page with multiple discovery sections
+  - Visual icons and color coding for each discovery category
 - **Reader Experience:** Browse trending stories, customize reading themes and font sizes, bookmark chapters, follow authors, write reviews and comments with threaded discussions, and download works as PDFs.
 - **Author Portal:** Secure JWT-based authentication allows authors to publish works using a rich Quill editor, manage drafts, track reading statistics, view review analytics, and engage with readers through replies.
 - **Author Analytics:**
@@ -208,13 +217,20 @@ The auto-seeder initializes demo accounts for testing:
 - `GET /api/authors` - List all authors
 - `GET /api/authors/:id` - Get author details
 - `GET /api/readers/:id` - Get reader profile (public)
-- `GET /api/books` - List all published books (includes average ratings)
+- `GET /api/books` - List all published books (supports filtering: status, sortBy, limit)
 - `GET /api/books/:id` - Get book details with chapters
 - `GET /api/books/:id/comments` - Get book comments
 - `POST /api/authors` - Register new author
 - `POST /api/authors/login` - Authenticate and receive JWT (token: ink_token)
 - `POST /api/readers` - Register new reader
 - `POST /api/readers/login` - Authenticate and receive JWT (token: ink_reader_token)
+
+### Discovery Endpoints (Public)
+- `GET /api/books/discover/trending` - Trending books (most views, top 20)
+- `GET /api/books/discover/highest-rated` - Highest rated books (4.5+ stars, min 5 ratings, top 20)
+- `GET /api/books/discover/recently-updated` - Recently updated books (new chapters in last 30 days, top 20)
+- `GET /api/books/discover/completed` - Completed stories (status='completed', top 20)
+- `GET /api/authors/discover/most-followed` - Most followed authors (by follower count, top 20)
 
 ### Protected Author Endpoints (require Authorization: Bearer <ink_token>)
 - `PUT /api/authors/profile` - Update author profile (name, bio, avatar, banner, location, website, social links)
