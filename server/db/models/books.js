@@ -3,25 +3,31 @@ import { getPool } from '../index.js';
 
 export async function getBooks(options = {}) {
   const pool = getPool();
-  let query = 'SELECT id, author_id, title, genre, series, tags, cover, description, status, views, created_at FROM books WHERE 1=1';
+  let query = `SELECT b.id, b.author_id, b.title, b.genre, b.series, b.tags, b.cover, b.description, b.status, b.views, b.created_at,
+               COALESCE(AVG(r.rating), 0) as average_rating,
+               COUNT(DISTINCT r.id) as rating_count
+        FROM books b
+        LEFT JOIN ratings r ON b.id = r.book_id
+        WHERE 1=1`;
   const params = [];
   let paramCount = 0;
 
   // Apply filters
   if (options.status) {
     paramCount++;
-    query += ` AND status = $${paramCount}`;
+    query += ` AND b.status = $${paramCount}`;
     params.push(options.status);
   }
 
+  query += ' GROUP BY b.id';
+
   // Apply sorting
   if (options.sortBy === 'views') {
-    query += ' ORDER BY views DESC';
+    query += ' ORDER BY b.views DESC';
   } else if (options.sortBy === 'rating') {
-    // Note: This requires a JOIN with ratings, for now just sort by created_at
-    query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY AVG(r.rating) DESC';
   } else {
-    query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY b.created_at DESC';
   }
 
   // Apply limit
@@ -32,7 +38,7 @@ export async function getBooks(options = {}) {
   }
 
   const res = await pool.query(query, params);
-  return res.rows.map(b => ({ ...b, tags: b.tags ? JSON.parse(b.tags) : [] }));
+  return res.rows.map(b => ({ ...b, tags: b.tags ? JSON.parse(b.tags) : [], averageRating: parseFloat(b.average_rating) || 0, ratingCount: parseInt(b.rating_count) || 0 }));
 }
 
 // Discovery: Trending books (most views in recent days)
