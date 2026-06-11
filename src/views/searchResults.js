@@ -269,7 +269,7 @@ function createGenreCard(genre) {
     card.querySelectorAll('.book-item').forEach(item => {
       item.addEventListener('click', (e) => {
         e.stopPropagation();
-        const bookId = parseInt(item.dataset.bookId);
+        const bookId = item.dataset.bookId;
         router.navigate('work-detail', { id: bookId });
       });
     });
@@ -373,7 +373,7 @@ function createTagCard(tag) {
     card.querySelectorAll('.book-item').forEach(item => {
       item.addEventListener('click', (e) => {
         e.stopPropagation();
-        const bookId = parseInt(item.dataset.bookId);
+        const bookId = item.dataset.bookId;
         router.navigate('work-detail', { id: bookId });
       });
     });
