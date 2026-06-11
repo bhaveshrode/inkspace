@@ -178,6 +178,9 @@ function createAuthorCard(author) {
 
 async function renderGenreResults(container, searchQuery) {
   const works = await store.getWorks();
+  const authors = await store.getAuthors();
+  const authMap = {};
+  authors.forEach(a => authMap[a.id] = a.name);
 
   // Get all unique genres
   const genreMap = new Map();
@@ -187,7 +190,7 @@ async function renderGenreResults(container, searchQuery) {
       if (!genreMap.has(genre)) {
         genreMap.set(genre, { name: w.genre, books: [] });
       }
-      genreMap.get(genre).books.push(w);
+      genreMap.get(genre).books.push({ ...w, authorName: authMap[w.authorId] });
     }
   });
 
@@ -225,10 +228,10 @@ async function renderGenreResults(container, searchQuery) {
 
 function createGenreCard(genre) {
   const card = document.createElement('div');
-  card.className = 'bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:shadow-md transition cursor-pointer';
+  card.className = 'bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition';
 
   card.innerHTML = `
-    <div class="flex items-start gap-4">
+    <div class="flex items-start gap-4 mb-4">
       <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-white flex-shrink-0">
         <i class="fas fa-layer-group text-2xl"></i>
       </div>
@@ -239,19 +242,47 @@ function createGenreCard(genre) {
         </div>
       </div>
     </div>
+
+    <!-- Books List -->
+    <div class="space-y-2 max-h-60 overflow-y-auto">
+      ${genre.books.slice(0, 5).map(book => `
+        <div class="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer transition book-item" data-book-id="${book.id}">
+          <div class="w-8 h-12 bg-slate-200 dark:bg-slate-700 rounded flex-shrink-0 overflow-hidden">
+            ${book.cover ? `<img src="${book.cover}" alt="${book.title}" class="w-full h-full object-cover" />` : ''}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-slate-900 dark:text-white truncate">${book.title}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${book.authorName || 'Unknown'}</p>
+          </div>
+        </div>
+      `).join('')}
+      ${genre.books.length > 5 ? `
+        <p class="text-xs text-slate-500 dark:text-slate-400 text-center pt-2">
+          +${genre.books.length - 5} more book${genre.books.length - 5 !== 1 ? 's' : ''}
+        </p>
+      ` : ''}
+    </div>
   `;
 
-  // Note: In a full implementation, clicking would navigate to a genre browse page
-  // For now, we'll just show an alert
-  card.addEventListener('click', () => {
-    alert(`Genre: ${genre.name}\nBooks: ${genre.books.length}\n\nFull genre browsing coming soon!`);
-  });
+  // Add click handlers for each book
+  setTimeout(() => {
+    card.querySelectorAll('.book-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const bookId = parseInt(item.dataset.bookId);
+        router.navigate('work-detail', { id: bookId });
+      });
+    });
+  }, 0);
 
   return card;
 }
 
 async function renderTagResults(container, searchQuery) {
   const works = await store.getWorks();
+  const authors = await store.getAuthors();
+  const authMap = {};
+  authors.forEach(a => authMap[a.id] = a.name);
 
   // Get all unique tags
   const tagMap = new Map();
@@ -262,7 +293,7 @@ async function renderTagResults(container, searchQuery) {
         if (!tagMap.has(tagLower)) {
           tagMap.set(tagLower, { name: tag, books: [] });
         }
-        tagMap.get(tagLower).books.push(w);
+        tagMap.get(tagLower).books.push({ ...w, authorName: authMap[w.authorId] });
       });
     }
   });
@@ -301,10 +332,10 @@ async function renderTagResults(container, searchQuery) {
 
 function createTagCard(tag) {
   const card = document.createElement('div');
-  card.className = 'bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:shadow-md transition cursor-pointer';
+  card.className = 'bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition';
 
   card.innerHTML = `
-    <div class="flex items-start gap-4">
+    <div class="flex items-start gap-4 mb-4">
       <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white flex-shrink-0">
         <i class="fas fa-tag text-2xl"></i>
       </div>
@@ -315,13 +346,38 @@ function createTagCard(tag) {
         </div>
       </div>
     </div>
+
+    <!-- Books List -->
+    <div class="space-y-2 max-h-60 overflow-y-auto">
+      ${tag.books.slice(0, 5).map(book => `
+        <div class="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer transition book-item" data-book-id="${book.id}">
+          <div class="w-8 h-12 bg-slate-200 dark:bg-slate-700 rounded flex-shrink-0 overflow-hidden">
+            ${book.cover ? `<img src="${book.cover}" alt="${book.title}" class="w-full h-full object-cover" />` : ''}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-slate-900 dark:text-white truncate">${book.title}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${book.authorName || 'Unknown'}</p>
+          </div>
+        </div>
+      `).join('')}
+      ${tag.books.length > 5 ? `
+        <p class="text-xs text-slate-500 dark:text-slate-400 text-center pt-2">
+          +${tag.books.length - 5} more book${tag.books.length - 5 !== 1 ? 's' : ''}
+        </p>
+      ` : ''}
+    </div>
   `;
 
-  // Note: In a full implementation, clicking would navigate to a tag browse page
-  // For now, we'll just show an alert
-  card.addEventListener('click', () => {
-    alert(`Tag: #${tag.name}\nBooks: ${tag.books.length}\n\nFull tag browsing coming soon!`);
-  });
+  // Add click handlers for each book
+  setTimeout(() => {
+    card.querySelectorAll('.book-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const bookId = parseInt(item.dataset.bookId);
+        router.navigate('work-detail', { id: bookId });
+      });
+    });
+  }, 0);
 
   return card;
 }
