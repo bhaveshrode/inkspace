@@ -5,60 +5,161 @@ import { workCard } from '../components/workCard.js';
 export async function home() {
   const container = document.createElement('div');
   container.className = 'fade-in';
-  const works = await store.getWorks();
-  const authors = await store.getAuthors();
+
+  // Load all discovery data in parallel for faster page load
+  const [trending, highestRated, recentlyUpdated, completed, authors] = await Promise.all([
+    store.getTrendingBooks().catch(() => []),
+    store.getHighestRatedBooks().catch(() => []),
+    store.getRecentlyUpdatedBooks().catch(() => []),
+    store.getCompletedBooks().catch(() => []),
+    store.getAuthors().catch(() => [])
+  ]);
+
   const authMap = {};
   authors.forEach(a => authMap[a.id] = a.name);
 
+  // Hero Section
   const hero = document.createElement('div');
-  hero.className = 'bg-indigo-700 text-white py-16';
+  hero.className = 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-20';
   hero.innerHTML = `
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      <h1 class="text-4xl font-bold mb-4">Discover Your Next Adventure</h1>
-      <p class="text-indigo-100 text-lg max-w-2xl mx-auto">Read thousands of stories from independent authors.</p>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center">
+        <h1 class="text-5xl font-bold mb-6 animate-fade-in">Discover Your Next Adventure</h1>
+        <p class="text-indigo-100 text-xl max-w-3xl mx-auto mb-8">
+          Explore thousands of stories from independent authors. Trending tales, highly rated gems, and freshly updated chapters await.
+        </p>
+        <div class="flex justify-center gap-4">
+          <button onclick="document.getElementById('global-search').focus()" class="bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-indigo-50 transition shadow-lg">
+            <i class="fas fa-search mr-2"></i>Start Exploring
+          </button>
+        </div>
+      </div>
     </div>`;
   container.appendChild(hero);
 
   const wrap = document.createElement('div');
-  wrap.className = 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12';
+  wrap.className = 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16';
 
-  // Trending
-  const trendingSection = document.createElement('div');
-  trendingSection.className = 'mb-12';
-  trendingSection.innerHTML = `<h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-6 border-l-4 border-indigo-500 pl-3"><i class="fa-solid fa-fire mr-2 text-orange-500"></i>Trending Now</h2>`;
-  const tGrid = document.createElement('div');
-  tGrid.className = 'grid grid-cols-1 md:grid-cols-3 gap-6';
-  const trendingWorks = [...works].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 3);
-  trendingWorks.forEach(w => tGrid.appendChild(workCard(w, false, authMap[w.authorId], router)));
-  trendingSection.appendChild(tGrid);
-  wrap.appendChild(trendingSection);
-
-  // Continue Reading
-  if (store.currentUser && store.readingHistory && store.readingHistory.length > 0) {
-    const cSec = document.createElement('div');
-    cSec.className = 'mb-12';
-    cSec.innerHTML = `<h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-6 border-l-4 border-green-500 pl-3">Continue Reading</h2>`;
-    const cGrid = document.createElement('div');
-    cGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
-
-    for (let i = 0; i < Math.min(3, store.readingHistory.length); i++) {
-      const hist = store.readingHistory[i];
-      const w = works.find(x => x.id === hist.book_id);
-      if (w) cGrid.appendChild(workCard(w, true, authMap[w.authorId], router));
-    }
-    cSec.appendChild(cGrid);
-    wrap.appendChild(cSec);
+  // Trending This Week Section
+  if (trending.length > 0) {
+    const trendingSection = createDiscoverySection(
+      'Trending This Week',
+      'fire',
+      'orange',
+      'Most read stories this week',
+      trending.slice(0, 6),
+      authMap
+    );
+    wrap.appendChild(trendingSection);
   }
 
-  // New & Featured
-  const fSec = document.createElement('div');
-  fSec.innerHTML = `<h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-6 border-l-4 border-indigo-500 pl-3">New & Featured</h2>`;
-  const fGrid = document.createElement('div');
-  fGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
-  [...works].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).forEach(w => fGrid.appendChild(workCard(w, false, authMap[w.authorId], router)));
-  fSec.appendChild(fGrid);
-  wrap.appendChild(fSec);
+  // Highest Rated Section
+  if (highestRated.length > 0) {
+    const ratedSection = createDiscoverySection(
+      'Highest Rated',
+      'star',
+      'yellow',
+      'Reader favorites with 4.5+ stars',
+      highestRated.slice(0, 6),
+      authMap
+    );
+    wrap.appendChild(ratedSection);
+  }
+
+  // Recently Updated Section
+  if (recentlyUpdated.length > 0) {
+    const updatedSection = createDiscoverySection(
+      'Recently Updated',
+      'clock-rotate-left',
+      'green',
+      'Fresh chapters added in the last 30 days',
+      recentlyUpdated.slice(0, 6),
+      authMap
+    );
+    wrap.appendChild(updatedSection);
+  }
+
+  // Completed Stories Section
+  if (completed.length > 0) {
+    const completedSection = createDiscoverySection(
+      'Completed Stories',
+      'check-circle',
+      'blue',
+      'Binge-ready finished tales',
+      completed.slice(0, 6),
+      authMap
+    );
+    wrap.appendChild(completedSection);
+  }
+
+  // Continue Reading (for logged-in readers)
+  if (store.currentReader) {
+    try {
+      const bookmarks = await store.readerGetBookmarks();
+      if (bookmarks.length > 0) {
+        const continueSection = document.createElement('div');
+        continueSection.className = 'mb-12';
+        continueSection.innerHTML = `
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+              <i class="fas fa-bookmark text-purple-500"></i>
+              Continue Reading
+            </h2>
+            <button onclick="router.navigate('reader-dashboard')" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium">
+              View All Bookmarks →
+            </button>
+          </div>
+          <p class="text-slate-600 dark:text-slate-400 mb-6">Pick up where you left off</p>
+        `;
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6';
+        bookmarks.slice(0, 3).forEach(bookmark => {
+          if (bookmark.book) {
+            grid.appendChild(workCard(bookmark.book, false, authMap[bookmark.book.authorId], router));
+          }
+        });
+        continueSection.appendChild(grid);
+        wrap.appendChild(continueSection);
+      }
+    } catch (e) {
+      console.error('Failed to load bookmarks:', e);
+    }
+  }
 
   container.appendChild(wrap);
   return container;
+}
+
+// Helper function to create discovery sections
+function createDiscoverySection(title, icon, color, description, works, authMap) {
+  const section = document.createElement('div');
+  section.className = 'discovery-section';
+
+  const iconColors = {
+    orange: 'text-orange-500',
+    yellow: 'text-yellow-500',
+    green: 'text-green-500',
+    blue: 'text-blue-500',
+    purple: 'text-purple-500'
+  };
+
+  section.innerHTML = `
+    <div class="mb-6">
+      <h2 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3 mb-2">
+        <i class="fas fa-${icon} ${iconColors[color]}"></i>
+        ${title}
+      </h2>
+      <p class="text-slate-600 dark:text-slate-400">${description}</p>
+    </div>
+  `;
+
+  const grid = document.createElement('div');
+  grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6';
+
+  works.forEach(w => {
+    grid.appendChild(workCard(w, false, authMap[w.authorId], router));
+  });
+
+  section.appendChild(grid);
+  return section;
 }

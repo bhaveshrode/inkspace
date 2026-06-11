@@ -136,6 +136,27 @@ export const store = {
     const work = await this.apiFetch(`/api/books/${id}`);
     return this._mapWork(work);
   },
+
+  // Discovery methods
+  async getTrendingBooks() {
+    const books = await this.apiFetch('/api/books/discover/trending');
+    return books.map(b => this._mapWork(b));
+  },
+  async getHighestRatedBooks() {
+    const books = await this.apiFetch('/api/books/discover/highest-rated');
+    return books.map(b => this._mapWork(b));
+  },
+  async getRecentlyUpdatedBooks() {
+    const books = await this.apiFetch('/api/books/discover/recently-updated');
+    return books.map(b => this._mapWork(b));
+  },
+  async getCompletedBooks() {
+    const books = await this.apiFetch('/api/books/discover/completed');
+    return books.map(b => this._mapWork(b));
+  },
+  async getMostFollowedAuthors() {
+    return this.apiFetch('/api/authors/discover/most-followed');
+  },
   async createWork(work) {
     const created = await this.apiFetch('/api/books', { method: 'POST', body: JSON.stringify(work) });
     return this._mapWork(created);

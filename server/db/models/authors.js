@@ -67,3 +67,20 @@ export async function updateAuthorProfile(authorId, profileData) {
 
   return res.rows[0];
 }
+
+// Discovery: Most followed authors
+export async function getMostFollowedAuthors(limit = 20) {
+  const pool = getPool();
+  const res = await pool.query(`
+    SELECT a.id, a.name, a.email, a.bio, a.avatar, a.banner, a.location, a.website,
+           a.twitter, a.instagram, a.facebook, a.linkedin, a.github, a.followers, a.created_at,
+           COUNT(DISTINCT b.id) as book_count,
+           COALESCE(SUM(b.views), 0) as total_views
+    FROM authors a
+    LEFT JOIN books b ON a.id = b.author_id
+    GROUP BY a.id
+    ORDER BY a.followers DESC, COUNT(DISTINCT b.id) DESC
+    LIMIT $1
+  `, [limit]);
+  return res.rows.map(a => ({ ...a, bookCount: parseInt(a.book_count) || 0, totalViews: parseInt(a.total_views) || 0 }));
+}

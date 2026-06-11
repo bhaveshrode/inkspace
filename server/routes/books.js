@@ -13,10 +13,55 @@ import { getReaderById } from '../db/models/readers.js';
 
 const router = express.Router();
 
-// Get all books
+// Discovery endpoint - Trending this week (most views in last 7 days)
+router.get('/discover/trending', async (req, res) => {
+  try {
+    const books = await booksModel.getTrendingBooks(7, 20);
+    res.json(books);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Discovery endpoint - Highest rated (avg rating >= 4.5, min 5 ratings)
+router.get('/discover/highest-rated', async (req, res) => {
+  try {
+    const books = await booksModel.getHighestRatedBooks(20);
+    res.json(books);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Discovery endpoint - Recently updated (new chapters in last 30 days)
+router.get('/discover/recently-updated', async (req, res) => {
+  try {
+    const books = await booksModel.getRecentlyUpdatedBooks(30, 20);
+    res.json(books);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Discovery endpoint - Completed stories
+router.get('/discover/completed', async (req, res) => {
+  try {
+    const books = await booksModel.getCompletedBooks(20);
+    res.json(books);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get all books (with optional filtering and sorting)
 router.get('/', async (req, res) => {
   try {
-    const books = await booksModel.getBooks();
+    const { status, minRating, sortBy, limit } = req.query;
+    const books = await booksModel.getBooks({ status, minRating, sortBy, limit });
     res.json(books);
   } catch (err) {
     console.error(err);

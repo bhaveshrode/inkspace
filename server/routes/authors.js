@@ -8,6 +8,18 @@ import * as commentsModel from '../db/models/comments.js';
 
 const router = express.Router();
 
+// Discovery endpoint - Most followed authors
+router.get('/discover/most-followed', async (req, res) => {
+  try {
+    const { getMostFollowedAuthors } = await import('../db/models/authors.js');
+    const authors = await getMostFollowedAuthors(20);
+    res.json(authors);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Get all authors
 router.get('/', async (req, res) => {
   try {
