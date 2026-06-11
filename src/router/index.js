@@ -63,7 +63,7 @@ export const router = {
       }
     }
 
-    if (['home', 'search', 'search-results'].includes(this.currentPage)) searchContainer.classList.remove('hidden');
+    if (['home', 'search'].includes(this.currentPage)) searchContainer.classList.remove('hidden');
     else searchContainer.classList.add('hidden');
   },
 
@@ -117,11 +117,7 @@ export const router = {
           view = await views.editChapter(this.params.id, this.params.chapterIndex);
           break;
         case 'search':
-          // Handle old search route - convert to new params format
-          view = await views.searchResults(this.params);
-          break;
-        case 'search-results':
-          view = await views.searchResults(this.params);
+          view = await views.searchResults(this.params.query);
           break;
         case 'reader-login':
           view = await views.readerLogin();

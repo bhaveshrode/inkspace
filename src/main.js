@@ -108,22 +108,6 @@ window.handleSearch = function (e) {
   if (query) router.navigate('search', { query });
 };
 
-// Global search functionality from navigation bar
-window.handleGlobalSearch = function (event) {
-  console.log('[Search] Key pressed:', event.key);
-  if (event.key === 'Enter') {
-    event.preventDefault(); // Prevent form submission if wrapped in form
-    const searchInput = document.getElementById('global-search');
-    const query = searchInput.value.trim();
-    console.log('[Search] Navigating with query:', query);
-    if (query) {
-      router.navigate('search-results', { q: query, type: 'books', page: 1 });
-    } else {
-      router.navigate('search-results', { type: 'books', page: 1 });
-    }
-  }
-};
-
 // View book ratings
 window.viewBookRatings = function (bookId) {
   router.navigate('book-ratings', { id: bookId });
