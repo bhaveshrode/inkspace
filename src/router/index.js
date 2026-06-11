@@ -117,7 +117,8 @@ export const router = {
           view = await views.editChapter(this.params.id, this.params.chapterIndex);
           break;
         case 'search':
-          view = await views.searchResults(this.params.query);
+          // Handle old search route - convert to new params format
+          view = await views.searchResults(this.params);
           break;
         case 'search-results':
           view = await views.searchResults(this.params);
