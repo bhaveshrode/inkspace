@@ -1,0 +1,2 @@
+DROP DATABASE IF EXISTS storyhub;
+CREATE DATABASE storyhub;
