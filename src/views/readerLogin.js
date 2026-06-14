@@ -34,6 +34,12 @@ export async function readerLogin() {
           </button>
         </form>
 
+        <div class="mt-4 text-center">
+          <a href="#" id="forgot-password-link" class="text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">
+            Forgot password?
+          </a>
+        </div>
+
         <div class="mt-6 text-center">
           <p class="text-sm text-slate-600 dark:text-slate-400">
             Don't have an account?
@@ -79,6 +85,11 @@ export async function readerLogin() {
   container.querySelector('#signup-link').addEventListener('click', (e) => {
     e.preventDefault();
     router.navigate('reader-signup');
+  });
+
+  container.querySelector('#forgot-password-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    router.navigate('reader-forgot-password');
   });
 
   container.querySelector('#author-link').addEventListener('click', (e) => {

@@ -152,6 +152,18 @@ export const router = {
           }
           view = await views.bookReviews(this.params.bookId);
           break;
+        case 'author-forgot-password':
+          view = await views.authorForgotPassword();
+          break;
+        case 'author-reset-password':
+          view = await views.authorResetPassword();
+          break;
+        case 'reader-forgot-password':
+          view = await views.readerForgotPassword();
+          break;
+        case 'reader-reset-password':
+          view = await views.readerResetPassword();
+          break;
         default:
           view = await views.home();
       }

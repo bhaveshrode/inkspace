@@ -14,3 +14,7 @@ export { readerSignup } from './readerSignup.js';
 export { readerDashboard } from './readerDashboard.js';
 export { bookRatings } from './bookRatings.js';
 export { bookReviews } from './bookReviews.js';
+export { authorForgotPassword } from './authorForgotPassword.js';
+export { authorResetPassword } from './authorResetPassword.js';
+export { readerForgotPassword } from './readerForgotPassword.js';
+export { readerResetPassword } from './readerResetPassword.js';

@@ -638,5 +638,63 @@ export const store = {
       badge.textContent = this.unreadNotificationCount;
       badge.classList.toggle('hidden', this.unreadNotificationCount === 0);
     }
+  },
+
+  // Password Reset Methods - Authors
+  async requestAuthorPasswordReset(email) {
+    const res = await fetch('/api/authors/password-reset/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to request password reset');
+    return data;
+  },
+
+  async validateAuthorResetToken(token) {
+    const res = await fetch(`/api/authors/password-reset/validate/${token}`);
+    const data = await res.json();
+    return data.valid;
+  },
+
+  async resetAuthorPassword(token, password) {
+    const res = await fetch('/api/authors/password-reset/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+    return data;
+  },
+
+  // Password Reset Methods - Readers
+  async requestReaderPasswordReset(email) {
+    const res = await fetch('/api/readers/password-reset/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to request password reset');
+    return data;
+  },
+
+  async validateReaderResetToken(token) {
+    const res = await fetch(`/api/readers/password-reset/validate/${token}`);
+    const data = await res.json();
+    return data.valid;
+  },
+
+  async resetReaderPassword(token, password) {
+    const res = await fetch('/api/readers/password-reset/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+    return data;
   }
 };

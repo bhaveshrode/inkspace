@@ -26,6 +26,11 @@ export async function authorLogin() {
           Login
         </button>
       </form>
+      <div class="mt-4 text-center">
+        <a href="#" id="forgot-password-link" class="text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">
+          Forgot password?
+        </a>
+      </div>
     </div>
   `;
 
@@ -52,6 +57,11 @@ export async function authorLogin() {
     } catch (err) {
       showToast(err.message, 'error');
     }
+  });
+
+  container.querySelector('#forgot-password-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    router.navigate('author-forgot-password');
   });
 
   return container;

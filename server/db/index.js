@@ -235,6 +235,19 @@ async function init() {
 
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_id, recipient_type, read, created_at DESC);`);
 
+  // Create password_reset_tokens table
+  await pool.query(`CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    user_type TEXT NOT NULL CHECK (user_type IN ('author', 'reader')),
+    token TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+  );`);
+
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token, expires_at, used);`);
+
   // Migrations: Add columns if they don't exist in existing databases
   try {
     // Check and add reader_id to comments if missing
