@@ -6,78 +6,66 @@ InkSpace is a modern, maintainable full-stack web application for reading, writi
 - **Dual Authentication System:** Separate authentication for authors and readers with distinct JWT tokens. Fixed bottom login bar provides clear access to both login options. Prevents dual login (reader + author simultaneously) to avoid session conflicts.
 - **Reader Accounts:** Dedicated reader authentication system with bookmarks, reading history tracking, author following, and 1-5 star ratings. Readers can write detailed reviews, post comments on stories, and manage their personal reading library.
 - **Reviews & Comments System:**
-  - Readers can write comprehensive reviews with title, rating (1-5 stars), and detailed text (50-2000 characters)
-  - One review per reader per book with edit/delete capabilities
-  - "Helpful" voting system to highlight useful reviews (one vote per reader per review)
-  - Comment system for quick feedback on books
-  - **Two-way threaded reply system**: Authors and readers can reply to reviews and comments, enabling conversation
-  - Authors can respond from their dashboard or the Book Reviews analytics page
+    - Readers can write comprehensive reviews with title, rating (1-5 stars), and detailed text (50-2000 characters)
+    - One review per reader per book with edit/delete capabilities
+    - "Helpful" voting system to highlight useful reviews (one vote per reader per review)
+    - Comment system for quick feedback on books
+    - **Two-way threaded reply system**: Authors and readers can reply to reviews and comments, enabling conversation
+    - Authors can respond from their dashboard or the Book Reviews analytics page
 - **Comprehensive Search System:**
-  - **Multi-category search**: Books, Authors, Genres, and Tags with dedicated tabs
-  - **Book Search**: Full-text search across titles and descriptions with cover thumbnails
-  - **Author Search**: Search by author name or bio with profile avatars displayed
-  - **Genre Search**: Browse books grouped by genre with visual genre cards
-  - **Tag Search**: Discover books by tags with expandable book lists
-  - **Real-time filtering**: Instant results as you type with query highlighting
-  - **URL persistence**: Shareable search URLs with query and tab parameters
-  - **Visual polish**: Profile images, book covers, and responsive card layouts
-  - Enter key support and mobile-friendly search interface
+    - **Multi-category search**: Books, Authors, Genres, and Tags with dedicated tabs
+    - **Book Search**: Full-text search across titles and descriptions with cover thumbnails
+    - **Author Search**: Search by author name or bio with profile avatars displayed
+    - **Genre Search**: Browse books grouped by genre with visual genre cards
+    - **Tag Search**: Discover books by tags with expandable book lists
+    - **Real-time filtering**: Instant results as you type with query highlighting
+    - **URL persistence**: Shareable search URLs with query and tab parameters
+    - **Visual polish**: Profile images, book covers, and responsive card layouts
+    - Enter key support and mobile-friendly search interface
 - **Content Discovery System:**
-  - **Trending This Week**: Most read stories with view-based ranking
-  - **Highest Rated**: Books with 4.0+ star ratings and minimum 3 ratings
-  - **Recently Updated**: Stories with new chapters published in last 30 days
-  - **Completed Stories**: Finished tales ready for binge reading
-  - **Most Followed Authors**: Top authors by follower count with book statistics
-  - Parallel data loading for optimal performance
-  - Curated home page with multiple discovery sections
-  - Visual icons and color coding for each discovery category
+    - **Trending This Week**: Most read stories with view-based ranking
+    - **Highest Rated**: Books with 4.0+ star ratings and minimum 3 ratings
+    - **Recently Updated**: Stories with new chapters published in last 30 days
+    - **Completed Stories**: Finished tales ready for binge reading
+    - **Most Followed Authors**: Top authors by follower count with book statistics
+    - Parallel data loading for optimal performance
+    - Curated home page with multiple discovery sections
+    - Visual icons and color coding for each discovery category
 - **Reader Experience:** Browse trending stories, customize reading themes and font sizes, bookmark chapters, follow authors, write reviews and comments with threaded discussions, and download works as PDFs.
 - **Author Portal:** Secure JWT-based authentication allows authors to publish works using a rich Quill editor, manage drafts, track reading statistics, view review analytics, and engage with readers through replies.
 - **Author Analytics:**
-  - Comprehensive review statistics dashboard (total reviews, average rating, rating breakdown)
-  - Book Reviews page with filtering (by star rating) and sorting (newest, oldest, highest/lowest rating, most helpful)
-  - Recent comments section in dashboard with reply functionality
-  - Rating analytics view showing all ratings for each book
+    - Comprehensive review statistics dashboard (total reviews, average rating, rating breakdown)
+    - Book Reviews page with filtering (by star rating) and sorting (newest, oldest, highest/lowest rating, most helpful)
+    - Recent comments section in dashboard with reply functionality
+    - Rating analytics view showing all ratings for each book
 - **Professional Author Profiles:**
-  - Banner image with gradient overlay for visual appeal
-  - Large circular avatar with verified badge (1000+ followers)
-  - Comprehensive statistics: total works, followers, total reads, weighted average rating
-  - Dynamic achievement badges: Popular Author (1000+ followers), Prolific Writer (10+ works), Highly Rated (4.5+ stars), Best Seller (100k+ views)
-  - Social media integration: Website, Twitter, Instagram, Facebook, LinkedIn, GitHub links
-  - Recent activity section with activity status indicator (Very Active/Active/Moderately Active/Inactive)
-  - Publishing frequency tracking and last 3 published works display
-  - Profile editing modal for authors to update bio, avatar, banner, location, and social links
-  - Follow/unfollow button for readers with real-time follower count updates
-  - Published works grid with cover images and ratings
+    - Banner image with gradient overlay for visual appeal
+    - Large circular avatar with verified badge (1000+ followers)
+    - Comprehensive statistics: total works, followers, total reads, weighted average rating
+    - Dynamic achievement badges: Popular Author (1000+ followers), Prolific Writer (10+ works), Highly Rated (4.5+ stars), Best Seller (100k+ views)
+    - Social media integration: Website, Twitter, Instagram, Facebook, LinkedIn, GitHub links
+    - Recent activity section with activity status indicator (Very Active/Active/Moderately Active/Inactive)
+    - Publishing frequency tracking and last 3 published works display
+    - Profile editing modal for authors to update bio, avatar, banner, location, and social links
+    - Follow/unfollow button for readers with real-time follower count updates
+    - Published works grid with cover images and ratings
 - **Real-time Notifications:**
-  - Database-driven notification system with 30-second polling
-  - Notification bell with unread count badge
-  - Authors receive notifications for: new followers, new ratings, new comments, comment replies
-  - Readers receive notifications for: new chapters from followed authors, author replies, comment replies
-  - Click-to-navigate: notifications take you directly to relevant content
-  - Automatic tab switching and smooth scrolling to context
-  - Separate notification streams for authors and readers
+    - Database-driven notification system with 30-second polling
+    - Notification bell with unread count badge
+    - Authors receive notifications for: new followers, new ratings, new comments, comment replies
+    - Readers receive notifications for: new chapters from followed authors, author replies, comment replies
+    - Click-to-navigate: notifications take you directly to relevant content
+    - Automatic tab switching and smooth scrolling to context
+    - Separate notification streams for authors and readers
 - **RESTful API:** A fully secured Node.js backend using Express that handles structured interactions with the PostgreSQL database.
 - **Data Security:** Passwords are cryptographically hashed using `bcryptjs`. Separate JWT tokens for authors and readers. Mutating API endpoints are protected with strict authorization checks and ownership validation.
 - **Rate Limiting:** Comprehensive rate limiting protection against brute force attacks and API abuse:
-  - **Authentication endpoints**: 5 login attempts per 15 minutes per IP
-  - **Registration endpoints**: 3 signups per hour per IP
-  - **Password reset requests**: 3 requests per hour per IP
-  - **General API reads**: 100 requests per minute per IP
-  - **API write operations**: 30 requests per minute per IP
-  - Automatic response headers showing remaining requests and reset time
-  - Protection against password guessing, spam account creation, and API flooding
-- **Password Reset Flow:** Secure password recovery system for both authors and readers:
-  - Forgot password links on all login pages
-  - Secure token generation using crypto.randomBytes (256-bit entropy)
-  - Time-limited tokens with 1-hour expiry
-  - One-time use tokens (marked as used after successful reset)
-  - Rate limiting prevents abuse (3 requests per hour per IP)
-  - Email enumeration protection (always returns success message)
-  - Token validation before allowing password reset
-  - Client and server-side password validation (minimum 6 characters)
-  - Automatic cleanup of old unused tokens
-  - Development mode logs reset URLs to console for testing
+    - **Authentication endpoints**: 5 login attempts per 15 minutes per IP
+    - **Registration endpoints**: 3 signups per hour per IP
+    - **General API reads**: 100 requests per minute per IP
+    - **API write operations**: 30 requests per minute per IP
+    - Automatic response headers showing remaining requests and reset time
+    - Protection against password guessing, spam account creation, and API flooding
 - **Offline Capabilities:** Uses a Service Worker (`sw.js`) to provide offline caching and PWA installation.
 
 ## Tech Stack
@@ -195,8 +183,8 @@ inkspace/
    npm run dev
    ```
    This starts both the backend server (port 3000) and Vite dev server (port 5173) concurrently.
-   - Backend API: http://localhost:3000
-   - Frontend: http://localhost:5173
+    - Backend API: http://localhost:3000
+    - Frontend: http://localhost:5173
 
 5. **Production mode:**
    ```bash
