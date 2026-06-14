@@ -62,10 +62,22 @@ InkSpace is a modern, maintainable full-stack web application for reading, writi
 - **Rate Limiting:** Comprehensive rate limiting protection against brute force attacks and API abuse:
   - **Authentication endpoints**: 5 login attempts per 15 minutes per IP
   - **Registration endpoints**: 3 signups per hour per IP
+  - **Password reset requests**: 3 requests per hour per IP
   - **General API reads**: 100 requests per minute per IP
   - **API write operations**: 30 requests per minute per IP
   - Automatic response headers showing remaining requests and reset time
   - Protection against password guessing, spam account creation, and API flooding
+- **Password Reset Flow:** Secure password recovery system for both authors and readers:
+  - Forgot password links on all login pages
+  - Secure token generation using crypto.randomBytes (256-bit entropy)
+  - Time-limited tokens with 1-hour expiry
+  - One-time use tokens (marked as used after successful reset)
+  - Rate limiting prevents abuse (3 requests per hour per IP)
+  - Email enumeration protection (always returns success message)
+  - Token validation before allowing password reset
+  - Client and server-side password validation (minimum 6 characters)
+  - Automatic cleanup of old unused tokens
+  - Development mode logs reset URLs to console for testing
 - **Offline Capabilities:** Uses a Service Worker (`sw.js`) to provide offline caching and PWA installation.
 
 ## Tech Stack
