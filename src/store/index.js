@@ -62,6 +62,12 @@ export const store = {
         throw new Error('Session expired or access denied.');
       }
 
+      // Handle rate limiting (429 Too Many Requests)
+      if (res.status === 429) {
+        const data = await res.json();
+        throw new Error(data.error || 'Too many requests. Please try again later.');
+      }
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'API Error');
       return data;
@@ -88,6 +94,12 @@ export const store = {
         this.saveLocal();
         if (window.router) window.router.navigate('reader-login');
         throw new Error('Session expired or access denied.');
+      }
+
+      // Handle rate limiting (429 Too Many Requests)
+      if (res.status === 429) {
+        const data = await res.json();
+        throw new Error(data.error || 'Too many requests. Please try again later.');
       }
 
       const data = await res.json();
