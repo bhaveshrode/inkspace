@@ -27,9 +27,9 @@ export const store = {
   async loadUserData() {
     if (!this.currentUser) return;
     try {
-      this.follows = await this.apiFetch(`/api/users/${this.currentUser.id}/follows`);
-      this.bookmarks = await this.apiFetch(`/api/users/${this.currentUser.id}/bookmarks`);
-      this.readingHistory = await this.apiFetch(`/api/users/${this.currentUser.id}/reading`);
+      this.follows = await this.apiFetch(`/api/users/${this.currentUser.id}/follows`, { silent: true });
+      this.bookmarks = await this.apiFetch(`/api/users/${this.currentUser.id}/bookmarks`, { silent: true });
+      this.readingHistory = await this.apiFetch(`/api/users/${this.currentUser.id}/reading`, { silent: true });
     } catch (e) {
       console.error('Failed to load user data', e);
     }
@@ -38,9 +38,9 @@ export const store = {
   async loadReaderData() {
     if (!this.currentReader) return;
     try {
-      this.bookmarks = await this.readerApiFetch('/api/interactions/bookmarks');
-      this.readingHistory = await this.readerApiFetch('/api/interactions/history');
-      this.follows = await this.readerApiFetch('/api/interactions/following');
+      this.bookmarks = await this.readerApiFetch('/api/interactions/bookmarks', { silent: true });
+      this.readingHistory = await this.readerApiFetch('/api/interactions/history', { silent: true });
+      this.follows = await this.readerApiFetch('/api/interactions/following', { silent: true });
     } catch (e) {
       console.error('Failed to load reader data', e);
     }
@@ -50,6 +50,7 @@ export const store = {
     const headers = { 'Content-Type': 'application/json' };
     const token = localStorage.getItem('ink_token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    const silent = options.silent || false;
 
     try {
       const res = await fetch(path, { headers: { ...headers, ...(options.headers || {}) }, ...options });
@@ -58,7 +59,9 @@ export const store = {
         this.currentUser = null;
         localStorage.removeItem('ink_token');
         this.saveLocal();
-        if (window.router) window.router.navigate('author-login');
+        if (window.router && !silent) window.router.navigate('author-login');
+        // Don't throw error if silent mode (used during initialization)
+        if (silent) return null;
         throw new Error('Session expired or access denied.');
       }
 
@@ -84,6 +87,7 @@ export const store = {
     const headers = { 'Content-Type': 'application/json' };
     const token = localStorage.getItem('ink_reader_token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    const silent = options.silent || false;
 
     try {
       const res = await fetch(path, { headers: { ...headers, ...(options.headers || {}) }, ...options });
@@ -92,7 +96,9 @@ export const store = {
         this.currentReader = null;
         localStorage.removeItem('ink_reader_token');
         this.saveLocal();
-        if (window.router) window.router.navigate('reader-login');
+        if (window.router && !silent) window.router.navigate('reader-login');
+        // Don't throw error if silent mode (used during initialization)
+        if (silent) return null;
         throw new Error('Session expired or access denied.');
       }
 
