@@ -3,10 +3,10 @@ import { router } from '../router/index.js';
 import { showToast } from '../components/toast.js';
 
 export async function readerLogin() {
-  const container = document.createElement('div');
-  container.className = 'fade-in min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-900 dark:to-slate-800 px-4';
+    const container = document.createElement('div');
+    container.className = 'fade-in min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-900 dark:to-slate-800 px-4';
 
-  container.innerHTML = `
+    container.innerHTML = `
     <div class="max-w-md w-full">
       <div class="text-center mb-8">
         <i class="fa-solid fa-book-reader text-5xl text-indigo-600 mb-4"></i>
@@ -34,12 +34,6 @@ export async function readerLogin() {
           </button>
         </form>
 
-        <div class="mt-4 text-center">
-          <a href="#" id="forgot-password-link" class="text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">
-            Forgot password?
-          </a>
-        </div>
-
         <div class="mt-6 text-center">
           <p class="text-sm text-slate-600 dark:text-slate-400">
             Don't have an account?
@@ -57,45 +51,40 @@ export async function readerLogin() {
     </div>
   `;
 
-  const form = container.querySelector('#reader-login-form');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+    const form = container.querySelector('#reader-login-form');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-    // Check if author is already logged in
-    if (store.currentUser) {
-      showToast('Please logout from author account first', 'error');
-      return;
-    }
+        // Check if author is already logged in
+        if (store.currentUser) {
+            showToast('Please logout from author account first', 'error');
+            return;
+        }
 
-    const email = container.querySelector('#email').value;
-    const password = container.querySelector('#password').value;
+        const email = container.querySelector('#email').value;
+        const password = container.querySelector('#password').value;
 
-    try {
-      await store.readerLogin({ email, password });
-      showToast('Welcome back!');
-      router.navigate('reader-dashboard');
-      if (window.initializeNotificationBell) {
-        window.initializeNotificationBell();
-      }
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  });
+        try {
+            await store.readerLogin({ email, password });
+            showToast('Welcome back!');
+            router.navigate('reader-dashboard');
+            if (window.initializeNotificationBell) {
+                window.initializeNotificationBell();
+            }
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    });
 
-  container.querySelector('#signup-link').addEventListener('click', (e) => {
-    e.preventDefault();
-    router.navigate('reader-signup');
-  });
+    container.querySelector('#signup-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        router.navigate('reader-signup');
+    });
 
-  container.querySelector('#forgot-password-link').addEventListener('click', (e) => {
-    e.preventDefault();
-    router.navigate('reader-forgot-password');
-  });
+    container.querySelector('#author-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        router.navigate('author-login');
+    });
 
-  container.querySelector('#author-link').addEventListener('click', (e) => {
-    e.preventDefault();
-    router.navigate('author-login');
-  });
-
-  return container;
+    return container;
 }
