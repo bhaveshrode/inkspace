@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../middleware/auth.js';
+import { authLimiter, registrationLimiter } from '../middleware/rateLimiter.js';
 import * as readersModel from '../db/models/readers.js';
 
 const router = express.Router();
@@ -22,7 +23,7 @@ const authenticateReader = (req, res, next) => {
 };
 
 // Register new reader
-router.post('/', async (req, res) => {
+router.post('/', registrationLimiter, async (req, res) => {
   try {
     const { name, email, password, bio, avatar } = req.body;
     if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
@@ -38,7 +39,7 @@ router.post('/', async (req, res) => {
 });
 
 // Reader login
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Missing fields' });

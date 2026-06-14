@@ -59,13 +59,20 @@ InkSpace is a modern, maintainable full-stack web application for reading, writi
   - Separate notification streams for authors and readers
 - **RESTful API:** A fully secured Node.js backend using Express that handles structured interactions with the PostgreSQL database.
 - **Data Security:** Passwords are cryptographically hashed using `bcryptjs`. Separate JWT tokens for authors and readers. Mutating API endpoints are protected with strict authorization checks and ownership validation.
+- **Rate Limiting:** Comprehensive rate limiting protection against brute force attacks and API abuse:
+  - **Authentication endpoints**: 5 login attempts per 15 minutes per IP
+  - **Registration endpoints**: 3 signups per hour per IP
+  - **General API reads**: 100 requests per minute per IP
+  - **API write operations**: 30 requests per minute per IP
+  - Automatic response headers showing remaining requests and reset time
+  - Protection against password guessing, spam account creation, and API flooding
 - **Offline Capabilities:** Uses a Service Worker (`sw.js`) to provide offline caching and PWA installation.
 
 ## Tech Stack
 - **Frontend:** Vanilla JavaScript (ES6 modules), Vite bundler, HTML5, CSS (Tailwind)
 - **Backend:** Node.js, Express.js (ES6 modules)
 - **Database:** PostgreSQL (`pg`)
-- **Security:** JSON Web Tokens (JWT), `bcryptjs`
+- **Security:** JSON Web Tokens (JWT), `bcryptjs`, `express-rate-limit`
 - **Build System:** Vite for development and production builds
 
 ## Project Structure
@@ -85,7 +92,8 @@ inkspace/
 │   │   ├── interactions.js # Reader interactions (bookmarks, history, follows, ratings, reviews, comments, replies)
 │   │   └── notifications.js # Notification system routes
 │   ├── middleware/        # Express middleware
-│   │   └── auth.js        # JWT authentication
+│   │   ├── auth.js        # JWT authentication
+│   │   └── rateLimiter.js # Rate limiting configuration
 │   └── db/                # Database layer
 │       ├── index.js       # DB connection & initialization
 │       └── models/        # Data access layer

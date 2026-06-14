@@ -18,6 +18,9 @@ import userRoutes from './routes/user.js';
 import interactionsRoutes from './routes/interactions.js';
 import notificationsRoutes from './routes/notifications.js';
 
+// Import rate limiters
+import { apiReadLimiter } from './middleware/rateLimiter.js';
+
 // Initialize database (tables, seed data)
 import './db/index.js';
 
@@ -27,6 +30,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json({ limit: '2mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Apply general API rate limiting to all routes
+app.use('/api', apiReadLimiter);
 
 // Serve static frontend files from public directory
 app.use(express.static(path.join(__dirname, '../public')));
